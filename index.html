@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Lobby</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div>
+        <h1>Multiplayer Game Lobby</h1>
+        <div id="login">
+            <input type="text" id="username" placeholder="Enter your username" />
+            <button onclick="setUsername()">Set Username</button>
+        </div>
+        <div id="game" style="display:none;">
+            <h2>Welcome, <span id="userDisplay"></span>!</h2>
+            <p>Your assigned position is: <span id="position"></span></p>
+            <button onclick="markReady()">I'm Ready</button>
+            <p id="status"></p>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        function setUsername() {
+            const username = document.getElementById('username').value;
+            socket.emit('setUsername', username);
+        }
+
+        function markReady() {
+            socket.emit('playerReady');
+        }
+
+        // Listen for username set confirmation
+        socket.on('userSet', function(data) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('userDisplay').innerText = data.username;
+            document.getElementById('position').innerText = `x: ${data.position.x}, y: ${data.position.y}`;
+        });
+
+        // Listen for a full lobby
+        socket.on('lobbyFull', function(message) {
+            alert(message);
+        });
+
+
+        // Listen for player readiness
+        socket.on('waiting', function(message) {
+            document.getElementById('status').innerText = message;
+        });
+
+        // Listen for all players being ready
+        socket.on('allPlayersReady', function(message) {
+            document.getElementById('status').innerText = message;
+            alert('Game starting!');
+            // You can trigger the actual game start logic here
+        });
+    </script>
+</body>
+</html>
+
