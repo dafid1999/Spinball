@@ -1,65 +1,64 @@
 <!DOCTYPE html>
-<html>
-   <head><title>Hello world</title></head>
-   <script src="/socket.io/socket.io.js"></script>
-   <script>
-      var socket = io();
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Lobby</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div>
+        <h1>Multiplayer Game Lobby</h1>
+        <div id="login">
+            <input type="text" id="username" placeholder="Enter your username" />
+            <button onclick="setUsername()">Set Username</button>
+        </div>
+        <div id="game" style="display:none;">
+            <h2>Welcome, <span id="userDisplay"></span>!</h2>
+            <p>Your assigned position is: <span id="position"></span></p>
+            <button onclick="markReady()">I'm Ready</button>
+            <p id="status"></p>
+        </div>
+    </div>
 
-      function setUsername(){
-         var username = document.getElementById('name').value;
-         var room = document.getElementById('room').value;
+    <script>
+        const socket = io();
 
-         if(username && room){
-            socket.emit('setUsername', { username, room });
-         } else {
-            document.getElementById('error-container').innerHTML = "Username and Room are required!";
-         }
-      }
+        function setUsername() {
+            const username = document.getElementById('username').value;
+            socket.emit('setUsername', username);
+        }
 
-      var user;
-      var room;
-      socket.on('userExists', function(data){
-         document.getElementById('error-container').innerHTML = data;
-      });
+        function markReady() {
+            socket.emit('playerReady');
+        }
 
-      socket.on('roomFull', function(data){
-         document.getElementById('error-container').innerHTML = data;
-      });
+        // Listen for username set confirmation
+        socket.on('userSet', function(data) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('userDisplay').innerText = data.username;
+            document.getElementById('position').innerText = `x: ${data.position.x}, y: ${data.position.y}`;
+        });
 
-      socket.on('noRoom', function(data){
-         document.getElementById('error-container').innerHTML = data;
-      });
+        // Listen for a full lobby
+        socket.on('lobbyFull', function(message) {
+            alert(message);
+        });
 
-      socket.on('userSet', function(data){
-         user = data.username;
-         room = data.room;
-         document.body.innerHTML = '<input type="text" id="message">\
-         <button type="button" name="button" onclick="sendMessage()">Send</button>\
-         <div id="message-container"></div>';
-      });
 
-      function sendMessage(){
-         var msg = document.getElementById('message').value;
-         if(msg){
-            socket.emit('msg', { message: msg, user: user });
-         }
-      }
+        // Listen for player readiness
+        socket.on('waiting', function(message) {
+            document.getElementById('status').innerText = message;
+        });
 
-      socket.on('newmsg', function(data){
-         if(user){
-            document.getElementById('message-container').innerHTML += '<div><b>' + data.user + '</b>: ' + data.message + '</div>';
-         }
-      });
-   </script>
-   <body>
-      <div id="error-container"></div>
-      <input id="name" type="text" name="name" placeholder="Enter your name">
-      <select id="room">
-         <option value="Room1">Room1 (2 users max)</option>
-         <option value="Room2">Room2 (3 users max)</option>
-         <option value="Room3">Room3 (4 users max)</option>
-      </select>
-      <button type="button" name="button" onclick="setUsername()">Let me chat!</button>
-   </body>
+        // Listen for all players being ready
+        socket.on('allPlayersReady', function(message) {
+            document.getElementById('status').innerText = message;
+            alert('Game starting!');
+            // You can trigger the actual game start logic here
+        });
+    </script>
+</body>
 </html>
 
