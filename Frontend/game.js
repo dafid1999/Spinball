@@ -10,6 +10,8 @@ const borderWidth = 10;
 const playerWidth = 20;
 const playerHeight = 200;
 
+
+
 // Parametry gracza
 const player = {
     name: 'Player1', // Nazwa gracza
@@ -91,16 +93,6 @@ function updatePlayerPosition() {
     }
 }
 
-// Funkcja główna gry
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyszczenie canvasa
-    drawBoard(); // Rysowanie planszy
-    updatePlayerPosition(); // Aktualizacja pozycji gracza
-    drawPlayer(); // Rysowanie gracza
-    requestAnimationFrame(gameLoop); // Wywołanie gameLoop w następnym cyklu
-}
-
-
 // Event listeners dla wciśnięcia klawisza
 window.addEventListener('keydown', (event) => {
     if (event.key in keys) {
@@ -114,6 +106,15 @@ window.addEventListener('keyup', (event) => {
         keys[event.key] = false;
     }
 });
+
+// Funkcja główna gry
+function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyszczenie canvasa
+    drawBoard(); // Rysowanie planszy
+    updatePlayerPosition(); // Aktualizacja pozycji gracza
+    drawPlayer(); // Rysowanie gracza
+    requestAnimationFrame(gameLoop); // Wywołanie gameLoop w następnym cyklu
+}
 
 // Uruchomienie pętli gry
 gameLoop();
