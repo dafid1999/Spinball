@@ -7,6 +7,8 @@ const boardHeight = 800;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = 10;
+const playerWidth = 20;
+const playerHeight = 200;
 
 // Parametry gracza
 const player = {
