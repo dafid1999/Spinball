@@ -1,5 +1,5 @@
 const canvas = document.getElementById('mainCanvas');
-const ctx= canvas.getContext('2d');
+const ctx = canvas.getContext('2d');
 ctx.font = '30px Arial';
 
 const boardWidth = 800;
@@ -9,8 +9,6 @@ const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = 10;
 const playerWidth = 20;
 const playerHeight = 200;
-
-
 
 // Parametry gracza
 const player = {
@@ -23,7 +21,6 @@ const player = {
     speed: 2 // Prędkość poruszania
 };
 
-// let players = {};
 // Obiekt przechowujący stan wciśniętych klawiszy
 const keys = {
     ArrowUp: false,
@@ -74,20 +71,18 @@ function drawPlayer() {
 
 // Funkcja aktualizująca pozycję gracza
 function updatePlayerPosition() {
-    if(player.name === 'Player1'
-        || player.name === 'Player2') {
+    if (player.name === 'Player1' || player.name === 'Player2') {
         if (keys.ArrowUp && player.y > 0) {
             player.y -= player.speed;
         }
         if (keys.ArrowDown && player.y < boardHeight - player.height) {
             player.y += player.speed;
         }
-    } else if(player.name === 'Player3'
-        || player.name === 'Player4') {
+    } else if (player.name === 'Player3' || player.name === 'Player4') {
         if (keys.ArrowLeft && player.x > 0) {
             player.x -= player.speed;
         }
-        if (keys.ArrowRight && player.x < boardWidth- player.width) {
+        if (keys.ArrowRight && player.x < boardWidth - player.width) {
             player.x += player.speed;
         }
     }
@@ -118,3 +113,4 @@ function gameLoop() {
 
 // Uruchomienie pętli gry
 gameLoop();
+

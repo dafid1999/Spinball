@@ -7,6 +7,7 @@ const path = require('path');
 app.use(express.static('frontend'));
 
 const maxPlayers = 4; 
+const minPlayers = 2;
 const users = []; 
 
 let positions = [
@@ -54,19 +55,22 @@ io.on('connection', function(socket) {
     });
 
 
-    socket.on('playerReady', function() {
-        const user = users.find(user => user.id === socket.id);
-        if (user) {
-            user.ready = true;
+socket.on('playerReady', function() {
+    const user = users.find(user => user.id === socket.id);
+    if (user) {
+        user.ready = true;
 
-            const readyUsers = users.filter(user => user.ready).length;
-            if (readyUsers === maxPlayers) {
-                io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-            } else {
-                socket.emit('waiting', `Waiting for ${maxPlayers - readyUsers} more players to be ready.`);
-            }
+        const readyUsers = users.filter(user => user.ready).length;
+
+        if (readyUsers >= minPlayers && readyUsers === users.length) {
+            io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
+        } else if (readyUsers >= minPlayers && readyUsers < users.length) {
+            socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
+        } else if (readyUsers < minPlayers) {
+            socket.emit('waiting', `Waiting for ${minPlayers - readyUsers} more players `);
         }
-    });
+    }
+});
     socket.on('disconnect', function() {
         const index = users.findIndex(user => user.id === socket.id);
         if (index !== -1) {

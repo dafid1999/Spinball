@@ -8,7 +8,11 @@ html, body {
     align-items: center;
 }
 
-Canvas {
-    max-width: 2000px;
-    max-height: 1000px;
+#game {
+    display: none;
 }
+
+canvas {
+    display: none;
+}
+
