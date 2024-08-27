@@ -31,6 +31,7 @@ socket.on('waiting', function(message) {
 // Listen for all players being ready
 socket.on('allPlayersReady', function(message) {
     document.getElementById('status').innerText = message;
-    alert('Game starting!');
+    startGame();
+    drawPlayers();
     // You can trigger the actual game start logic here
 });
