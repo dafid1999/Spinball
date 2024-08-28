@@ -8,14 +8,14 @@ app.use(express.static('frontend'));
 
 const boardWidth = 800;
 const boardHeight = 800;
-const maxPlayers = 1;
+const maxPlayers = 4;
 const users = [];
 
 let positions = [
-    { x: 0, y: 350 },    // Position for the 1st player
-    { x: 800, y: 350 },  // Position for the 2nd player
-    { x: 350, y: 0 },    // Position for the 3rd player
-    { x: 350, y: 800 }   // Position for the 4th player
+    { x: 0, y: 300 },    // Position for the 1st player
+    { x: 780, y: 300 },  // Position for the 2nd player
+    { x: 300, y: 0 },    // Position for the 3rd player
+    { x: 300, y: 780 }   // Position for the 4th player
 ];
 
 let colors = [
@@ -29,7 +29,7 @@ let angles = [
     -90,
     90,
     0,
-    180
+    0
 ];
 
 io.on('connection', function(socket) {
@@ -97,13 +97,21 @@ io.on('connection', function(socket) {
         const user = users.find(user => user.id === socket.id);
         if (user) {
             if(user.color === 'blue' || user.color === 'red') {
-                if(user.position.y > 0 && user.position.y < boardHeight){
+                if(user.position.y >= 0 && user.position.y <= boardHeight-200){
                     user.position.y += data.y;
+                } else if(user.position.y < 0) {
+                    user.position.y = 0;
+                } else if(user.position.y > boardHeight-200) {
+                    user.position.y = boardHeight-200;
                 }
             }
             if(user.color === 'green' || user.color === 'yellow') {
-                if(user.position.x > 0 && user.position.x < boardWidth){
+                if(user.position.x >= 0 && user.position.x <= boardWidth-200){
                     user.position.x += data.x;
+                } else if(user.position.x < 0) {
+                    user.position.x = 0;
+                } else if(user.position.x > boardWidth-200) {
+                    user.position.x = boardWidth-200;
                 }
             }
             io.sockets.emit('playerMoved', user);

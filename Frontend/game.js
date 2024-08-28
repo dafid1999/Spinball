@@ -39,21 +39,27 @@ function drawBoard() {
 
 // Function to draw player
 function drawPlayers() {
-    console.log("start drawing players");
     for (let playerId in players) {
-        console.log("drawing player", playerId);
         const player = players[playerId];
 
         ctx.fillStyle = player.color;
         ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
         ctx.save();
-        ctx.translate(boardX + player.position.x - 10, boardY + player.position.y + 150);
+        const textWidth = ctx.measureText(player.username).width;  // Calculation of the text width
+        if(player.color === 'blue') {
+            ctx.translate(boardX + player.position.x - player.width, boardY + player.position.y + player.height - ((player.height - textWidth) / 2));
+        } else if(player.color === 'red') {
+            ctx.translate(boardX + player.position.x + 2*player.width, boardY + player.position.y + ((player.height - textWidth) / 2));
+        } else if(player.color === 'green') {
+            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y - player.height);
+        } else if(player.color === 'yellow') {
+            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y + 3*player.height);
+        }
         ctx.rotate(player.angle*Math.PI/180); // Rotate the context
         // Draw player name
         ctx.fillText(player.username, 0, 0);
         ctx.restore(); // Restore previous context state
     }
-    console.log("end drawing players");
 }
 
 socket.on('currentPlayers', (serverPlayers) => {
@@ -70,7 +76,6 @@ socket.on('playerMoved', (playerData) => {
         console.error(`Player with ID ${playerData.id} not found.`);
     }
 });
-
 
 // Function to update player position
 function updatePlayerPosition() {
