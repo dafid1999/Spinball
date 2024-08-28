@@ -30,6 +30,8 @@ socket.on('waiting', function(message) {
 // Listen for all players being ready
 socket.on('allPlayersReady', function(message) {
     document.getElementById('status').innerText = message;
+    startGame();
+    drawPlayers();
     alert('Game starting!');
     document.getElementById('game').style.display = 'none';
     document.getElementById('mainCanvas').style.display = 'block';
