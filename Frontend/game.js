@@ -1,5 +1,5 @@
 const canvas = document.getElementById('mainCanvas');
-const ctx= canvas.getContext('2d');
+const ctx = canvas.getContext('2d');
 ctx.font = '30px Arial';
 
 const boardWidth = 800;

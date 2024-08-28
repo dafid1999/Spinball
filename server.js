@@ -8,8 +8,9 @@ app.use(express.static('frontend'));
 
 const boardWidth = 800;
 const boardHeight = 800;
-const maxPlayers = 4;
-const users = [];
+const maxPlayers = 4; 
+const minPlayers = 2;
+const users = []; 
 
 let positions = [
     { x: 0, y: 300 },    // Position for the 1st player
@@ -79,17 +80,19 @@ io.on('connection', function(socket) {
 
     io.sockets.emit('currentPlayers', users);
 
-    socket.on('playerReady', function() {
-        const user = users.find(user => user.id === socket.id);
-        if (user) {
-            user.ready = true;
+socket.on('playerReady', function() {
+    const user = users.find(user => user.id === socket.id);
+    if (user) {
+        user.ready = true;
 
-            const readyUsers = users.filter(user => user.ready).length;
-            if (readyUsers === maxPlayers) {
-                io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-            } else {
-                socket.emit('waiting', `Waiting for ${maxPlayers - readyUsers} more players to be ready.`);
-            }
+        const readyUsers = users.filter(user => user.ready).length;
+
+        if (readyUsers >= minPlayers && readyUsers === users.length) {
+            io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
+        } else if (readyUsers >= minPlayers && readyUsers < users.length) {
+            socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
+        } else if (readyUsers < minPlayers) {
+            socket.emit('waiting', `Waiting for ${minPlayers - readyUsers} more players `);
         }
     });
 
@@ -117,7 +120,6 @@ io.on('connection', function(socket) {
             io.sockets.emit('playerMoved', user);
         }
     });
-
     socket.on('disconnect', function() {
         const index = users.findIndex(user => user.id === socket.id);
         if (index !== -1) {

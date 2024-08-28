@@ -22,7 +22,6 @@ socket.on('lobbyFull', function(message) {
     alert(message);
 });
 
-
 // Listen for player readiness
 socket.on('waiting', function(message) {
     document.getElementById('status').innerText = message;
@@ -33,5 +32,9 @@ socket.on('allPlayersReady', function(message) {
     document.getElementById('status').innerText = message;
     startGame();
     drawPlayers();
+    alert('Game starting!');
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('mainCanvas').style.display = 'block';
     // You can trigger the actual game start logic here
 });
+
