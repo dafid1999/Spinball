@@ -2,7 +2,7 @@ Praktyki\
 \
 Gra napisana w JS Vanilla użycie express.js do zbudowania serwera http oraz użycie socket.io do komunikacji między graczami oraz wysyłania danych o grze. (piłka, paletki itd)
 
-Projekt zakłada:\
+Projekt zakłada:
 
 Synchronizacje położenia piłki\
 Synchronizacje położenia peletek graczey\
@@ -19,4 +19,4 @@ Na podstawie ilości graczy rysowanie planszy oraz ustawianie rozgrywki. (minumu
 
 
 
-SeoPower...\
+SeoPower...
