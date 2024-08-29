@@ -7,11 +7,17 @@ const boardHeight = 800;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = 10;
-let players = [];
-let isGameRunning = false; // Zmienna stanu gry
-const playerSpeed = 2;
 
-// Obiekt przechowujący stan wciśniętych klawiszy
+let users = [];
+let ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 10,
+    color: 'black',
+    dx: 0,
+    dy: 0
+};
+
 const keys = {
     ArrowUp: false,
     ArrowDown: false,
@@ -20,100 +26,56 @@ const keys = {
 };
 
 function drawBoard() {
-    // Shadow style
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // Shadow color (black with transparency)
-    ctx.shadowBlur = 15; // Shadow blur
-    ctx.shadowOffsetX = 0; // Shadow offset in the horizontal direction
-    ctx.shadowOffsetY = 0; // Shadow offset in the vertical direction
-    // Drawing a filled rectangle
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 15;
     ctx.fillStyle = 'white';
     ctx.fillRect(boardX, boardY, boardWidth, boardHeight);
-    // Border style
-    ctx.lineWidth = borderWidth; // Border thickness
-    ctx.strokeStyle = 'black'; // Border color
-    // Drawing the border of the rectangle
+    ctx.lineWidth = borderWidth;
+    ctx.strokeStyle = 'black';
     ctx.strokeRect(boardX - borderWidth / 2, boardY - borderWidth / 2, boardWidth + borderWidth, boardHeight + borderWidth);
-    // Restoring default shadow settings
-    ctx.shadowColor = 'transparent'; // Disabling shadow
+    ctx.shadowColor = 'transparent';
 }
 
-// Function to draw player
 function drawPlayers() {
-    for (let playerId in players) {
-        const player = players[playerId];
+    users.forEach(user => {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(boardX + user.position.x, boardY + user.position.y, 20, 200);
+        ctx.fillStyle = 'red';
 
-        ctx.fillStyle = player.color;
-        ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
+        const angle = -90 * Math.PI / 180;
         ctx.save();
-        const textWidth = ctx.measureText(player.username).width;  // Calculation of the text width
-        if(player.color === 'blue') {
-            ctx.translate(boardX + player.position.x - player.width, boardY + player.position.y + player.height - ((player.height - textWidth) / 2));
-        } else if(player.color === 'red') {
-            ctx.translate(boardX + player.position.x + 2*player.width, boardY + player.position.y + ((player.height - textWidth) / 2));
-        } else if(player.color === 'green') {
-            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y - player.height);
-        } else if(player.color === 'yellow') {
-            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y + 3*player.height);
-        }
-        ctx.rotate(player.angle*Math.PI/180); // Rotate the context
-        // Draw player name
-        ctx.fillText(player.username, 0, 0);
-        ctx.restore(); // Restore previous context state
-    }
+        ctx.translate(boardX + user.position.x - 10, boardY + user.position.y + 150);
+        ctx.rotate(angle);
+        ctx.fillText(user.username, 0, 0);
+        ctx.restore();
+    });
 }
 
-socket.on('currentPlayers', (serverPlayers) => {
-    players = serverPlayers;
-});
-
-socket.on('playerMoved', (playerData) => {
-    const player = players.find(player => player.id === playerData.id);
-    if (player) {
-        player.position.x = playerData.position.x;
-        player.position.y = playerData.position.y;
-        drawPlayers();
-    } else {
-        console.error(`Player with ID ${playerData.id} not found.`);
-    }
-});
-
-// Function to update player position
-function updatePlayerPosition() {
-    const movementData = { x: 0, y: 0 };
-    if (keys.ArrowUp) movementData.y -= playerSpeed;
-    if (keys.ArrowDown) movementData.y += playerSpeed;
-    if (keys.ArrowLeft) movementData.x -= playerSpeed;
-    if (keys.ArrowRight) movementData.x += playerSpeed;
-    socket.emit('playerMovement', movementData);
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ball.color;
+    ctx.fill();
+    ctx.closePath();
 }
 
-// Event listeners dla wciśnięcia klawisza
+function updateGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBoard();
+    drawBall();
+    drawPlayers();
+}
+
 window.addEventListener('keydown', (event) => {
     if (event.key in keys) {
         keys[event.key] = true;
+        socket.emit('playerMove', { key: event.key });
     }
 });
 
-// Event listeners dla zwolnienia klawisza
 window.addEventListener('keyup', (event) => {
     if (event.key in keys) {
         keys[event.key] = false;
     }
 });
 
-// Funkcja główna gry
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Czyszczenie canvasa
-    if (isGameRunning) {
-        drawBoard(); // Rysowanie planszy
-        drawPlayers(); // Rysowanie graczy
-        updatePlayerPosition(); // Aktualizacja pozycji gracza
-    }
-    requestAnimationFrame(gameLoop); // Wywołanie gameLoop w następnym cyklu
-}
-
-// Funkcja do rozpoczęcia gry
-function startGame() {
-    isGameRunning = true;
-    gameLoop(); // Uruchomienie pętli gry
-}
