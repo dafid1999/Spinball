@@ -35,6 +35,12 @@ socket.on('allPlayersReady', function(message) {
     alert('Game starting!');
     document.getElementById('game').style.display = 'none';
     document.getElementById('mainCanvas').style.display = 'block';
-    // You can trigger the actual game start logic here
+});
+
+// Listen for game over
+socket.on('gameOver', function(message) {
+    alert(message);
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('mainCanvas').style.display = 'none';
 });
 
