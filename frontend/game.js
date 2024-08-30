@@ -1,16 +1,17 @@
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
-ctx.font = '30px Arial';
+ctx.font = '20px Arial';
 
 const boardWidth = 800;
 const boardHeight = 800;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
-const borderWidth = 10;
+const borderWidth = boardWidth/100;
 let players = [];
 let isGameRunning = false;
+let lastTime = 0;
 
-const playerSpeed = 2;
+const playerSpeed = 625;
 
 // Ball object
 const ball = {
@@ -28,6 +29,10 @@ const keys = {
     ArrowLeft: false,
     ArrowRight: false
 };
+
+// Load the heart image
+const heartImage = new Image();
+heartImage.src = '../images/heart.png';
 
 function drawBoard() {
     // Shadow style
@@ -51,28 +56,45 @@ function drawBoard() {
 function drawPlayers() {
     for (let playerId in players) {
         const player = players[playerId];
-
         ctx.fillStyle = player.color;
         ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
         ctx.save();
-        const textWidth = ctx.measureText(player.username).width; 
+
+        const textWidth = ctx.measureText(player.username).width;
+        let nameX, nameY, heartsX, heartsY;
+        let transX = boardX + player.position.x;
+        let transY = boardY + player.position.y;
+        ctx.translate(transX, transY);
+        ctx.rotate(player.angle*Math.PI/180);
+
         if(player.color === 'blue') {
-            ctx.translate(boardX + player.position.x - player.width, boardY + player.position.y + player.height - ((player.height - textWidth) / 2));
+            nameX = (player.height - textWidth) / 2 - player.height;
+            nameY = -2.5 * player.width;
+            heartsX = (player.height - (player.lives * 25))/2 - player.height;
+            heartsY = -2 * player.width;
         } else if(player.color === 'red') {
-            ctx.translate(boardX + player.position.x + 2*player.width, boardY + player.position.y + ((player.height - textWidth) / 2));
+            nameX = (player.height - textWidth) / 2;
+            nameY = -3.5 * player.width;
+            heartsX = (player.height - (player.lives * 25))/2;
+            heartsY = -3 * player.width;
         } else if(player.color === 'green') {
-            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y - player.height);
+            nameX = (player.width - textWidth) / 2;
+            nameY = -2.5 * player.height;
+            heartsX = (player.width - player.lives * 25)/2;
+            heartsY = -2 * player.height;
         } else if(player.color === 'yellow') {
-            ctx.translate(boardX + player.position.x + ((player.width - textWidth) / 2), boardY + player.position.y + 3*player.height);
+            nameX = (player.width - textWidth) / 2;
+            nameY = 4.5 * player.height;
+            heartsX = (player.width - player.lives * 25)/2;
+            heartsY = 2 * player.height;
         }
-        ctx.rotate(player.angle*Math.PI/180); 
         // Draw player name
-        ctx.fillText(player.username, 0, 0);
-        ctx.restore(); 
-        
-        // Draw player lives
-        ctx.fillStyle = 'black';
-        ctx.fillText(`Lives: ${player.lives}`, boardX + player.position.x + player.width / 2, boardY + player.position.y - 10);
+        ctx.fillText(player.username, nameX, nameY);
+        // Draw player lives as hearts
+        for (let i = 0; i < player.lives; i++) {
+            ctx.drawImage(heartImage, heartsX + i * 25, heartsY, 20, 20);
+        }
+        ctx.restore();
     }
 }
 
@@ -85,12 +107,12 @@ function drawBall() {
 }
 
 // Function to update player position
-function updatePlayerPosition() {
+function updatePlayerPosition(deltaTime) {
     const movementData = { x: 0, y: 0 };
-    if (keys.ArrowUp) movementData.y -= playerSpeed;
-    if (keys.ArrowDown) movementData.y += playerSpeed;
-    if (keys.ArrowLeft) movementData.x -= playerSpeed;
-    if (keys.ArrowRight) movementData.x += playerSpeed;
+    if (keys.ArrowUp) movementData.y -= playerSpeed * deltaTime;
+    if (keys.ArrowDown) movementData.y += playerSpeed * deltaTime;
+    if (keys.ArrowLeft) movementData.x -= playerSpeed * deltaTime;
+    if (keys.ArrowRight) movementData.x += playerSpeed * deltaTime;
     socket.emit('playerMovement', movementData);
 }
 
@@ -109,13 +131,18 @@ window.addEventListener('keyup', (event) => {
 });
 
 // Main game loop function
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+function gameLoop(timestamp) {
+    if (lastTime === 0) lastTime = timestamp;
+
+    const deltaTime = (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+
     if (isGameRunning) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBoard(); 
         drawPlayers(); 
         drawBall(); 
-        updatePlayerPosition(); 
+        updatePlayerPosition(deltaTime); 
     }
     requestAnimationFrame(gameLoop);
 }
@@ -167,4 +194,3 @@ socket.on('gameOver', (message) => {
     document.getElementById('mainCanvas').style.display = 'none';
     document.getElementById('game').style.display = 'block';
 });
-
