@@ -90,7 +90,7 @@ function updateBallPosition() {
             const angle = Math.atan2(dy, dx);
 
             // Update ball's direction based on impact angle
-            const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy); // Preserve speed
+            const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) + 1; // Preserve speed
             ball.dx = Math.cos(angle) * speed;
             ball.dy = Math.sin(angle) * speed;
         }
@@ -206,7 +206,6 @@ io.on('connection', function(socket) {
             if (data) {
                 // Ruch dla graczy 'blue' i 'red' (góra-dół)
                 if (user.color === 'blue' || user.color === 'red') {
-                    log(user.color + " " + user.position.y);
                     user.position.y += data.y;
                     user.position.y = Math.max(0, Math.min(user.position.y, boardHeight - user.height));
                 }
@@ -221,7 +220,7 @@ io.on('connection', function(socket) {
         });
     }
     // Uruchomienie interwału aktualizującego pozycje graczy
-    setInterval(updatePositions, 1000 / 30); // 60 razy na sekundę
+    setInterval(updatePositions, 1000 / 60); // 60 razy na sekundę
 
     socket.on('disconnect', function() {
         const index = users.findIndex(user => user.id === socket.id);

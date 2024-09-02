@@ -10,8 +10,11 @@ const borderWidth = boardWidth/100;
 let players = [];
 let isGameRunning = false;
 let lastTime = 0;
+let accumulatedTime = 0;
+const FPS = 60;
+const frameTime = 1000 / FPS;
 
-const playerSpeed = 625;
+const playerSpeed = 150;
 
 // Ball object
 const ball = {
@@ -134,15 +137,25 @@ window.addEventListener('keyup', (event) => {
 function gameLoop(timestamp) {
     if (lastTime === 0) lastTime = timestamp;
 
-    const deltaTime = (timestamp - lastTime) / 1000;
+    let deltaTime = timestamp - lastTime;
     lastTime = timestamp;
+    accumulatedTime += deltaTime;
+
+    if (!isNaN(deltaTime)) {  // Sprawdzamy, czy deltaTime jest poprawną liczbą
+        accumulatedTime += deltaTime;
+    } else {
+        accumulatedTime = 0;  // Jeśli deltaTime byłby NaN, ustawiamy accumulatedTime na 0
+    }
 
     if (isGameRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawBoard(); 
         drawPlayers(); 
         drawBall(); 
-        updatePlayerPosition(deltaTime); 
+        if(accumulatedTime >= frameTime) {
+            updatePlayerPosition(frameTime / 1000);
+            accumulatedTime -= frameTime;
+        }
     }
     requestAnimationFrame(gameLoop);
 }
@@ -172,7 +185,6 @@ socket.on('playerMoved', (playerData) => {
     if (player) {
         player.position.x = playerData.position.x;
         player.position.y = playerData.position.y;
-        console.log(player.color + ' x ' + playerData.position.x, ' y '+ playerData.position.y + " " + Date.now());
     } else {
         console.error(`Player with ID ${playerData.id} not found.`);
     }

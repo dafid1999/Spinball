@@ -32,14 +32,13 @@ socket.on('allPlayersReady', function(message) {
     document.getElementById('status').innerText = message;
     startGame();
     drawPlayers();
-    alert('Game starting!');
     document.getElementById('game').style.display = 'none';
     document.getElementById('mainCanvas').style.display = 'block';
 });
 
 // Listen for game over
 socket.on('gameOver', function(message) {
-    alert(message);
+    isGameRunning(false);
     document.getElementById('game').style.display = 'block';
     document.getElementById('mainCanvas').style.display = 'none';
 });
