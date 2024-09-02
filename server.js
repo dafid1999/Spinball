@@ -206,7 +206,6 @@ io.on('connection', function(socket) {
             if (data) {
                 // Ruch dla graczy 'blue' i 'red' (góra-dół)
                 if (user.color === 'blue' || user.color === 'red') {
-                    // log(user.color + " " + user.position.y);
                     user.position.y += data.y;
                     user.position.y = Math.max(0, Math.min(user.position.y, boardHeight - user.height));
                 }
