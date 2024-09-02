@@ -38,7 +38,6 @@ socket.on('allPlayersReady', function(message) {
 
 // Listen for game over
 socket.on('gameOver', function(message) {
-    isGameRunning(false);
     document.getElementById('game').style.display = 'block';
     document.getElementById('mainCanvas').style.display = 'none';
 });

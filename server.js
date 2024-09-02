@@ -57,6 +57,13 @@ function resetBall() {
     const angle = Math.random() * 2 * Math.PI; // Random direction
     ball.dx = Math.cos(angle) * ball.speed;
     ball.dy = Math.sin(angle) * ball.speed;
+    users.forEach((user, index) => {
+        if (index < positions.length) {
+            user.position = {...positions[index] };
+        }
+    });
+    io.sockets.emit('ballMoved', ball);
+    io.sockets.emit('currentPlayers', users);
 }
 
 function updateBallPosition() {
