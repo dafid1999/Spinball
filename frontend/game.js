@@ -11,6 +11,9 @@ let players = [];
 let isGameRunning = false;
 let lastTime = 0;
 
+const throttleInterval = 33; // Limit to 30 times per second (33 ms)
+let lastThrottleTime = 0;
+
 const playerSpeed = 625;
 
 // Ball object
@@ -106,14 +109,19 @@ function drawBall() {
     ctx.fill();
 }
 
-// Function to update player position
+// Function to update player position with throttling
 function updatePlayerPosition(deltaTime) {
     const movementData = { x: 0, y: 0 };
     if (keys.ArrowUp) movementData.y -= playerSpeed * deltaTime;
     if (keys.ArrowDown) movementData.y += playerSpeed * deltaTime;
     if (keys.ArrowLeft) movementData.x -= playerSpeed * deltaTime;
     if (keys.ArrowRight) movementData.x += playerSpeed * deltaTime;
-    socket.emit('playerMovement', movementData);
+
+    const now = Date.now();
+    if (now - lastThrottleTime >= throttleInterval) {
+        socket.emit('playerMovement', movementData);
+        lastThrottleTime = now;
+    }
 }
 
 // Event listeners for key presses
@@ -129,6 +137,16 @@ window.addEventListener('keyup', (event) => {
         keys[event.key] = false;
     }
 });
+
+// Call the update function in your game loop, passing deltaTime
+function gameLoop(deltaTime) {
+    updatePlayerPosition(deltaTime);
+    requestAnimationFrame(gameLoop);
+}
+
+// Start the game loop
+requestAnimationFrame(gameLoop);
+
 
 // Main game loop function
 function gameLoop(timestamp) {
