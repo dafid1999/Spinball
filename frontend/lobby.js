@@ -30,10 +30,19 @@ socket.on('waiting', function(message) {
 // Listen for all players being ready
 socket.on('allPlayersReady', function(message) {
     document.getElementById('status').innerText = message;
-    startGame();
-    drawPlayers();
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('mainCanvas').style.display = 'block';
+    let countdown = 3;
+    
+    const countdownInterval = setInterval(function() {
+        document.getElementById('status').innerText = `Game starting in ${countdown}...`;
+        countdown--;
+	if (countdown < 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('mainCanvas').style.display = 'block';
+            startGame();
+            drawPlayers();
+        }
+    }, 1000);
 });
 
 // Listen for game over
