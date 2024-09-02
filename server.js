@@ -160,7 +160,6 @@ io.on('connection', function(socket) {
                 height: height,
                 lives: userLives
             };
-            console.log(newUser);
 
             users.push(newUser);
 
@@ -207,6 +206,7 @@ io.on('connection', function(socket) {
             if (data) {
                 // Ruch dla graczy 'blue' i 'red' (góra-dół)
                 if (user.color === 'blue' || user.color === 'red') {
+                    log(user.color + " " + user.position.y);
                     user.position.y += data.y;
                     user.position.y = Math.max(0, Math.min(user.position.y, boardHeight - user.height));
                 }
@@ -221,7 +221,7 @@ io.on('connection', function(socket) {
         });
     }
     // Uruchomienie interwału aktualizującego pozycje graczy
-    setInterval(updatePositions, 1000 / 60); // 60 razy na sekundę
+    setInterval(updatePositions, 1000 / 30); // 60 razy na sekundę
 
     socket.on('disconnect', function() {
         const index = users.findIndex(user => user.id === socket.id);

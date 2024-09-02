@@ -172,6 +172,7 @@ socket.on('playerMoved', (playerData) => {
     if (player) {
         player.position.x = playerData.position.x;
         player.position.y = playerData.position.y;
+        console.log(player.color + ' x ' + playerData.position.x, ' y '+ playerData.position.y + " " + Date.now());
     } else {
         console.error(`Player with ID ${playerData.id} not found.`);
     }
