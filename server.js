@@ -10,22 +10,22 @@ app.use(express.static('frontend'));
 
 const boardWidth = 800;
 const boardHeight = 800;
-const maxPlayers = 4; 
+const maxPlayers = 4;
 const minPlayers = 2;
-const users = []; 
+const users = [];
 const userLives = 3;
 const movementData = {};
 
 const playerSize = [
-    { x: boardWidth/40, y: boardHeight/4},
-    { x: boardWidth/4, y: boardHeight/40}
+    { x: boardWidth / 40, y: boardHeight / 4 },
+    { x: boardWidth / 4, y: boardHeight / 40 }
 ];
 
 let positions = [
-    { x: 0, y: (boardHeight-playerSize[0].y)/2 },    // Position for the 1st player
-    { x: boardWidth-playerSize[0].x, y: (boardHeight-playerSize[0].y)/2 },  // Position for the 2nd player
-    { x: (boardWidth-playerSize[1].x)/2, y: 0 },    // Position for the 3rd player
-    { x: (boardWidth-playerSize[1].x)/2, y: boardHeight-playerSize[1].y }   // Position for the 4th player
+    { x: 0, y: (boardHeight - playerSize[0].y) / 2 },    // Position for the 1st player
+    { x: boardWidth - playerSize[0].x, y: (boardHeight - playerSize[0].y) / 2 },  // Position for the 2nd player
+    { x: (boardWidth - playerSize[1].x) / 2, y: 0 },    // Position for the 3rd player
+    { x: (boardWidth - playerSize[1].x) / 2, y: boardHeight - playerSize[1].y }   // Position for the 4th player
 ];
 
 const colors = [
@@ -59,7 +59,7 @@ function resetBall() {
     ball.dy = Math.sin(angle) * ball.speed;
     users.forEach((user, index) => {
         if (index < positions.length) {
-            user.position = {...positions[index] };
+            user.position = { ...positions[index] };
         }
     });
     io.sockets.emit('ballMoved', ball);
@@ -135,7 +135,7 @@ function updateBallPosition() {
 // Update ball position periodically
 setInterval(updateBallPosition, 1000 / 60);
 
-io.on('connection', function(socket) {
+io.on('connection', function (socket) {
     console.log('A user connected #', socket.id);
 
     if (users.length >= maxPlayers) {
@@ -144,7 +144,7 @@ io.on('connection', function(socket) {
         return;
     }
 
-    socket.on('setUsername', function(data) {
+    socket.on('setUsername', function (data) {
         if (users.find(user => user.username === data)) {
             socket.emit('userExists', data + ' username is taken! Try another username.');
         } else {
@@ -182,7 +182,7 @@ io.on('connection', function(socket) {
 
     io.sockets.emit('currentPlayers', users);
 
-    socket.on('playerReady', function() {
+    socket.on('playerReady', function () {
         const user = users.find(user => user.id === socket.id);
         if (user) {
             user.ready = true;
@@ -200,7 +200,7 @@ io.on('connection', function(socket) {
         }
     });
 
-    socket.on('playerMovement', function(data) {
+    socket.on('playerMovement', function (data) {
         const user = users.find(user => user.id === socket.id);
         if (user) {
             movementData[user.id] = data; // Aktualizacja danych ruchu dla gracza
@@ -229,7 +229,7 @@ io.on('connection', function(socket) {
     // Uruchomienie interwału aktualizującego pozycje graczy
     setInterval(updatePositions, 1000 / 60); // 60 razy na sekundę
 
-    socket.on('disconnect', function() {
+    socket.on('disconnect', function () {
         const index = users.findIndex(user => user.id === socket.id);
         if (index !== -1) {
             console.log(`${users[index].username} has disconnected.`);
@@ -239,7 +239,7 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(3000, function() {
+http.listen(3000, function () {
     console.log('listening on localhost:3000');
 });
 

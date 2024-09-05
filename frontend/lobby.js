@@ -10,7 +10,7 @@ function markReady() {
 }
 
 // Listen for username set confirmation
-socket.on('userSet', function(data) {
+socket.on('userSet', function (data) {
     document.getElementById('login').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     document.getElementById('userDisplay').innerText = data.username;
@@ -18,24 +18,24 @@ socket.on('userSet', function(data) {
 });
 
 // Listen for a full lobby
-socket.on('lobbyFull', function(message) {
+socket.on('lobbyFull', function (message) {
     alert(message);
 });
 
 // Listen for player readiness
-socket.on('waiting', function(message) {
+socket.on('waiting', function (message) {
     document.getElementById('status').innerText = message;
 });
 
 // Listen for all players being ready
-socket.on('allPlayersReady', function(message) {
+socket.on('allPlayersReady', function (message) {
     document.getElementById('status').innerText = message;
     let countdown = 3;
-    
-    const countdownInterval = setInterval(function() {
+
+    const countdownInterval = setInterval(function () {
         document.getElementById('status').innerText = `Game starting in ${countdown}...`;
         countdown--;
-	if (countdown < 0) {
+        if (countdown < 0) {
             clearInterval(countdownInterval);
             document.getElementById('game').style.display = 'none';
             document.getElementById('mainCanvas').style.display = 'block';
@@ -46,7 +46,7 @@ socket.on('allPlayersReady', function(message) {
 });
 
 // Listen for game over
-socket.on('gameOver', function(message) {
+socket.on('gameOver', function (message) {
     document.getElementById('game').style.display = 'block';
     document.getElementById('mainCanvas').style.display = 'none';
 });

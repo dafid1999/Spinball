@@ -6,7 +6,7 @@ const boardWidth = 800;
 const boardHeight = 800;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
-const borderWidth = boardWidth/100;
+const borderWidth = boardWidth / 100;
 let players = [];
 let isGameRunning = false;
 let lastTime = 0;
@@ -68,27 +68,27 @@ function drawPlayers() {
         let transX = boardX + player.position.x;
         let transY = boardY + player.position.y;
         ctx.translate(transX, transY);
-        ctx.rotate(player.angle*Math.PI/180);
+        ctx.rotate(player.angle * Math.PI / 180);
 
-        if(player.color === 'blue') {
+        if (player.color === 'blue') {
             nameX = (player.height - textWidth) / 2 - player.height;
             nameY = -2.5 * player.width;
-            heartsX = (player.height - (player.lives * 25))/2 - player.height;
+            heartsX = (player.height - (player.lives * 25)) / 2 - player.height;
             heartsY = -2 * player.width;
-        } else if(player.color === 'red') {
+        } else if (player.color === 'red') {
             nameX = (player.height - textWidth) / 2;
             nameY = -3.5 * player.width;
-            heartsX = (player.height - (player.lives * 25))/2;
+            heartsX = (player.height - (player.lives * 25)) / 2;
             heartsY = -3 * player.width;
-        } else if(player.color === 'green') {
+        } else if (player.color === 'green') {
             nameX = (player.width - textWidth) / 2;
             nameY = -2.5 * player.height;
-            heartsX = (player.width - player.lives * 25)/2;
+            heartsX = (player.width - player.lives * 25) / 2;
             heartsY = -2 * player.height;
-        } else if(player.color === 'yellow') {
+        } else if (player.color === 'yellow') {
             nameX = (player.width - textWidth) / 2;
             nameY = 4.5 * player.height;
-            heartsX = (player.width - player.lives * 25)/2;
+            heartsX = (player.width - player.lives * 25) / 2;
             heartsY = 2 * player.height;
         }
         // Draw player name
@@ -149,10 +149,10 @@ function gameLoop(timestamp) {
 
     if (isGameRunning) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBoard(); 
-        drawPlayers(); 
-        drawBall(); 
-        if(accumulatedTime >= frameTime) {
+        drawBoard();
+        drawPlayers();
+        drawBall();
+        if (accumulatedTime >= frameTime) {
             updatePlayerPosition(frameTime / 1000);
             accumulatedTime -= frameTime;
         }
