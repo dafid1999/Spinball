@@ -1,6 +1,5 @@
 const { log } = require('console');
 const express = require('express');
-const { get } = require('http');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -15,6 +14,10 @@ const minPlayers = 2;
 const users = [];
 const userLives = 3;
 const movementData = {};
+
+let gameStarted = false;
+let counterBouncesWithWalls = 0;
+let intervalUpdateBallPosition, intervalUpdatePositions;
 
 const playerSize = [
     { x: boardWidth / 40, y: boardHeight / 4 },
@@ -52,11 +55,18 @@ const ball = {
 };
 
 function resetBall() {
+    counterBouncesWithWalls = 0;
     ball.x = boardWidth / 2;
     ball.y = boardHeight / 2;
-    const angle = Math.random() * 2 * Math.PI; // Random direction
-    ball.dx = Math.cos(angle) * ball.speed;
-    ball.dy = Math.sin(angle) * ball.speed;
+    // Losowanie losowych wartości kierunkowych dx i dy w zakresie od -1 do 1
+    let dx = (Math.random() * 2) - 1;
+    let dy = (Math.random() * 2) - 1;
+    // Normalizacja kierunku, aby uzyskać wektor jednostkowy
+    const length = Math.sqrt(dx * dx + dy * dy);
+    dx /= length;
+    dy /= length;
+    ball.dx = dx * ball.speed;
+    ball.dy = dy * ball.speed;
     users.forEach((user, index) => {
         if (index < positions.length) {
             user.position = { ...positions[index] };
@@ -64,20 +74,32 @@ function resetBall() {
     });
     io.sockets.emit('ballMoved', ball);
     io.sockets.emit('currentPlayers', users);
+    log('Ball reset', ball.dx, ball.dy);
+}
+
+function bounceFromWallWithMinValue() {
+    const minValue = 0.3;
+
+    if (Math.abs(ball.dx) < minValue) {
+        ball.dx = ball.dx + Math.sign(ball.dx) * minValue;
+    }
+    if (Math.abs(ball.dy) < minValue) {
+        ball.dy = ball.dy + Math.sign(ball.dy) * minValue;
+    }
 }
 
 function updateBallPosition() {
     ball.x += ball.dx;
     ball.y += ball.dy;
-
     // Ball collision with the game board edges
     if (ball.x + ball.radius > boardWidth || ball.x - ball.radius < 0) {
         ball.dx *= -1;
+        bounceFromWallWithMinValue();
     }
     if (ball.y + ball.radius > boardHeight || ball.y - ball.radius < 0) {
         ball.dy *= -1;
+        bounceFromWallWithMinValue();
     }
-
     // Ball collision with players and walls behind players
     users.forEach(user => {
         // Check collision with player
@@ -87,21 +109,14 @@ function updateBallPosition() {
             ball.y + ball.radius > user.position.y &&
             ball.y - ball.radius < user.position.y + user.height
         ) {
-            // Calculate impact point
-            const impactX = Math.max(user.position.x, Math.min(ball.x, user.position.x + user.width));
-            const impactY = Math.max(user.position.y, Math.min(ball.y, user.position.y + user.height));
-
-            // Calculate angle of impact
-            const dx = impactX - (user.position.x + user.width / 2);
-            const dy = impactY - (user.position.y + user.height / 2);
-            const angle = Math.atan2(dy, dx);
-
-            // Update ball's direction based on impact angle
-            const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) + 1; // Preserve speed
-            ball.dx = Math.cos(angle) * speed;
-            ball.dy = Math.sin(angle) * speed;
+            if(user.color === 'blue' || user.color === 'red') {
+                ball.dx = -(ball.dx * 1.2);
+                ball.dy = (ball.dy * 1.2);
+            } else if(user.color === 'green' || user.color === 'yellow') {
+                ball.dx = (ball.dy * 1.2);
+                ball.dy = -(ball.dy * 1.2);
+            }
         }
-
         // Check collision with the wall behind the player
         if (user.color === 'blue' && ball.x - ball.radius < user.position.x) { // Left wall collision
             user.lives -= 1;
@@ -116,14 +131,16 @@ function updateBallPosition() {
             user.lives -= 1;
             resetBall(); // Reset ball position after collision
         }
-
         // Check for game over
         if (user.lives <= 0) {
             users.splice(users.indexOf(user), 1); // Remove player
             io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
             io.sockets.emit('currentPlayers', users);
-            if (users.length < minPlayers) {
+            if (users.length < minPlayers && gameStarted) {
                 io.sockets.emit('gameOver', 'Not enough players to continue the game.');
+                clearInterval(intervalUpdateBallPosition);
+                clearInterval(intervalUpdatePositions);
+                gameStarted = false;
             }
         } else {
             io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
@@ -131,9 +148,6 @@ function updateBallPosition() {
     });
     io.sockets.emit('ballMoved', ball);
 }
-
-// Update ball position periodically
-setInterval(updateBallPosition, 1000 / 60);
 
 io.on('connection', function (socket) {
     console.log('A user connected #', socket.id);
@@ -182,6 +196,15 @@ io.on('connection', function (socket) {
 
     io.sockets.emit('currentPlayers', users);
 
+    function startGame() {
+        gameStarted = true;
+        resetBall(); // Reset the ball at the start of the game
+        // Update ball position periodically
+        intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
+        // Activation of the interval to update players' positions
+        intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);
+    }
+
     socket.on('playerReady', function () {
         const user = users.find(user => user.id === socket.id);
         if (user) {
@@ -191,7 +214,7 @@ io.on('connection', function (socket) {
 
             if (readyUsers >= minPlayers && readyUsers === users.length) {
                 io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-                resetBall(); // Reset the ball at the start of the game
+                setTimeout(startGame, 5000);
             } else if (readyUsers >= minPlayers && readyUsers < users.length) {
                 socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
             } else if (readyUsers < minPlayers) {
@@ -203,31 +226,29 @@ io.on('connection', function (socket) {
     socket.on('playerMovement', function (data) {
         const user = users.find(user => user.id === socket.id);
         if (user) {
-            movementData[user.id] = data; // Aktualizacja danych ruchu dla gracza
+            movementData[user.id] = data; // Movement data update for the player
         }
     });
-    // Funkcja aktualizująca pozycje graczy na serwerze
+    // Function to update the positions of players on the server
     function updatePositions() {
         users.forEach(user => {
             const data = movementData[user.id];
             if (data) {
-                // Ruch dla graczy 'blue' i 'red' (góra-dół)
+                // Movement for ‘blue’ and ‘red’ players (up and down)
                 if (user.color === 'blue' || user.color === 'red') {
                     user.position.y += data.y;
                     user.position.y = Math.max(0, Math.min(user.position.y, boardHeight - user.height));
                 }
-                // Ruch dla graczy 'green' i 'yellow' (lewo-prawo)
+                // Movement for ‘green’ and ‘yellow’ players (left-right)
                 if (user.color === 'green' || user.color === 'yellow') {
                     user.position.x += data.x;
                     user.position.x = Math.max(0, Math.min(user.position.x, boardWidth - user.width));
                 }
-                // Emitowanie zaktualizowanej pozycji do wszystkich klientów
+                // Issuing an updated position to all customers
                 io.sockets.emit('playerMoved', user);
             }
         });
     }
-    // Uruchomienie interwału aktualizującego pozycje graczy
-    setInterval(updatePositions, 1000 / 60); // 60 razy na sekundę
 
     socket.on('disconnect', function () {
         const index = users.findIndex(user => user.id === socket.id);
