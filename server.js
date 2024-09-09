@@ -1,7 +1,5 @@
 const { log } = require('console');
 const express = require('express');
-const { read } = require('fs');
-const { get } = require('http');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -17,7 +15,6 @@ let users = [];
 const userLives = 3;
 let movementData = {};
 
-let userSpeed = 24;
 let gameStarted = false;
 let counterBouncesWithWalls = 0;
 let intervalUpdateBallPosition, intervalUpdatePositions;
@@ -52,20 +49,15 @@ const ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
-    minSpeed: 5,
-    maxSpeed: 20,
+    speed: 5,
     dx: 0,
-    dy: 0,
-    lastCollisionUser: null
+    dy: 0
 };
 
 function resetBall() {
     counterBouncesWithWalls = 0;
     ball.x = boardWidth / 2;
     ball.y = boardHeight / 2;
-    // const angle = Math.random() * 2 * Math.PI; // Random direction
-    // ball.dx = Math.cos(angle) * ball.speed;
-    // ball.dy = Math.sin(angle) * ball.speed;
     // Losowanie losowych wartości kierunkowych dx i dy w zakresie od -1 do 1
     let dx = (Math.random() * 2) - 1;
     let dy = (Math.random() * 2) - 1;
@@ -73,8 +65,8 @@ function resetBall() {
     const length = Math.sqrt(dx * dx + dy * dy);
     dx /= length;
     dy /= length;
-    ball.dx = dx * ball.minSpeed;
-    ball.dy = dy * ball.minSpeed;
+    ball.dx = dx * ball.speed;
+    ball.dy = dy * ball.speed;
     users.forEach((user, index) => {
         if (index < positions.length) {
             user.position = { ...positions[index] };
@@ -85,40 +77,14 @@ function resetBall() {
     log('Ball reset', ball.dx, ball.dy);
 }
 
-// Function to handle ball bouncing logic
-function handleBallBounce(position, radius, limit, velocity) {
-    if (position + radius > limit || position - radius < 0) {
-        if (counterBouncesWithWalls >= 5) {
-            bounceFromWallWithMinValue();
-            counterBouncesWithWalls = 0;
-        } else {
-            velocity *= -1;
-            counterBouncesWithWalls++;
-        }
-        log("counterBouncesWithWalls: ", counterBouncesWithWalls);
-    }
-    return { velocity };
-}
-
 function bounceFromWallWithMinValue() {
-    const minValue = 0.2;
+    const minValue = 0.3;
 
     if (Math.abs(ball.dx) < minValue) {
-        ball.dx = Math.sign(ball.dx) * minValue;
+        ball.dx = ball.dx + Math.sign(ball.dx) * minValue;
     }
     if (Math.abs(ball.dy) < minValue) {
-        ball.dy = Math.sign(ball.dy) * minValue;
-    }
-    // We ensure that the speed of the ball does not decrease to zero or exceed a certain value
-    const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-    if (speed < ball.minSpeed) {
-        const factor = ball.minSpeed / speed;
-        ball.dx *= factor;
-        ball.dy *= factor;
-    } else if (speed > ball.maxSpeed) {
-        const factor = ball.maxSpeed / speed;
-        ball.dx *= factor;
-        ball.dy *= factor;
+        ball.dy = ball.dy + Math.sign(ball.dy) * minValue;
     }
 }
 
@@ -126,14 +92,15 @@ function updateBallPosition() {
 if(gameStarted) {
     ball.x += ball.dx;
     ball.y += ball.dy;
-    // Handle horizontal bounce
-    let result = handleBallBounce(ball.x, ball.radius, boardWidth, ball.dx);
-    ball.dx = result.velocity;
-
-    // Handle vertical bounce
-    result = handleBallBounce(ball.y, ball.radius, boardHeight, ball.dy);
-    ball.dy = result.velocity;
-
+    // Ball collision with the game board edges
+    if (ball.x + ball.radius > boardWidth || ball.x - ball.radius < 0) {
+        ball.dx *= -1;
+        bounceFromWallWithMinValue();
+    }
+    if (ball.y + ball.radius > boardHeight || ball.y - ball.radius < 0) {
+        ball.dy *= -1;
+        bounceFromWallWithMinValue();
+    }
     // Ball collision with players and walls behind players
     users.forEach(user => {
         // Check collision with player
@@ -143,31 +110,14 @@ if(gameStarted) {
             ball.y + ball.radius > user.position.y &&
             ball.y - ball.radius < user.position.y + user.height
         ) {
-            // Calculate impact point
-            const impactX = Math.max(user.position.x, Math.min(ball.x, user.position.x + user.width));
-            const impactY = Math.max(user.position.y, Math.min(ball.y, user.position.y + user.height));
-
-            // Calculate the relative impact distance (normalized between -1 and 1)
-            const relativeImpactX = (impactX - (user.position.x + user.width / 2)) / (user.width / 2);
-            const relativeImpactY = (impactY - (user.position.y + user.height / 2)) / (user.height / 2);
-
-            const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) + 1; // Preserve speed
-            log('Speed: ', speed);
-            if(user.isMoving) {
-                userSpeed = 24;
-            } else {
-                userSpeed = 0;
+            if(user.color === 'blue' || user.color === 'red') {
+                ball.dx = -(ball.dx * 1.2);
+                ball.dy = (ball.dy * 1.2);
+            } else if(user.color === 'green' || user.color === 'yellow') {
+                ball.dx = (ball.dy * 1.2);
+                ball.dy = -(ball.dy * 1.2);
             }
-            ball.dx = (relativeImpactX * 0.5 + (ball.dx / speed) * 0.5) * speed * 0.75 + userSpeed * 0.2; // Striking the side and adding the effect of pallet speed
-            ball.dy = (relativeImpactY * 0.5 + (ball.dy / speed) * 0.5) * speed * 0.75 + userSpeed * 0.2; // Striking up/down and adding a pallet speed effect
-
-            // We maintain total ball speed
-            const newSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-            const speedAdjustmentFactor = speed / newSpeed; // In order not to change speed
-            ball.dx *= speedAdjustmentFactor;
-            ball.dy *= speedAdjustmentFactor;
         }
-
         // Check collision with the wall behind the player
         if (user.color === 'blue' && ball.x - ball.radius < user.position.x) { // Left wall collision
             user.lives -= 1;
@@ -198,7 +148,6 @@ if(gameStarted) {
         } else {
             io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
         }
-        user.isMoving = false;
     });
     io.sockets.emit('ballMoved', ball);
 }
@@ -227,7 +176,6 @@ io.on('connection', function (socket) {
             const newUser = {
                 id: socket.id,
                 username: data,
-                isMoving: false,
                 position: positions[userIndex],
                 ready: false,
                 color: colors[userIndex],
@@ -260,15 +208,14 @@ io.on('connection', function (socket) {
 
             if (readyUsers >= minPlayers && readyUsers === users.length) {
                 io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-            setTimeout(function() {
-                gameStarted = true;
-                resetBall(); // Reset the ball at the start of the game
-                // Update ball position periodically
-                intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
-                // Activation of the interval to update players' positions
-                intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);              
-            }, 5000);                
-
+                setTimeout(function() {
+                    gameStarted = true;
+                    resetBall(); // Reset the ball at the start of the game
+                    // Update ball position periodically
+                    intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
+                    // Activation of the interval to update players' positions
+                    intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);              
+                }, 5000);                
             } else if (readyUsers >= minPlayers && readyUsers < users.length) {
                 socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
             } else if (readyUsers < minPlayers) {
@@ -281,7 +228,6 @@ io.on('connection', function (socket) {
         const user = users.find(user => user.id === socket.id);
         if (user) {
             movementData[user.id] = data; // Movement data update for the player
-            user.isMoving = true;
         }
     });
     // Function to update the positions of players on the server
@@ -304,8 +250,6 @@ io.on('connection', function (socket) {
             }
         });
     }
-    // // Activation of the interval to update players' positions
-    // setInterval(updatePositions, 1000 / 60);
 
     socket.on('disconnect', function () {
         const index = users.findIndex(user => user.id === socket.id);

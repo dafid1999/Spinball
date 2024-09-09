@@ -14,7 +14,7 @@ let accumulatedTime = 0;
 const FPS = 60;
 const frameTime = 1000 / FPS;
 
-const playerSpeed = 150;
+const playerSpeed = 300;
 
 // Ball object
 const ball = {
