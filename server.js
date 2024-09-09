@@ -13,9 +13,9 @@ const boardWidth = 800;
 const boardHeight = 800;
 const maxPlayers = 4;
 const minPlayers = 2;
-const users = [];
+let users = [];
 const userLives = 3;
-const movementData = {};
+let movementData = {};
 
 let userSpeed = 24;
 let gameStarted = false;
@@ -123,6 +123,7 @@ function bounceFromWallWithMinValue() {
 }
 
 function updateBallPosition() {
+if(gameStarted) {
     ball.x += ball.dx;
     ball.y += ball.dy;
     // Handle horizontal bounce
@@ -188,6 +189,8 @@ function updateBallPosition() {
             io.sockets.emit('currentPlayers', users);
             if (users.length < minPlayers && gameStarted) {
                 io.sockets.emit('gameOver', 'Not enough players to continue the game.');
+                users = [];
+                movementData = {};
                 clearInterval(intervalUpdateBallPosition);
                 clearInterval(intervalUpdatePositions);
                 gameStarted = false;
@@ -199,7 +202,7 @@ function updateBallPosition() {
     });
     io.sockets.emit('ballMoved', ball);
 }
-
+}
 io.on('connection', function (socket) {
     console.log('A user connected #', socket.id);
 
