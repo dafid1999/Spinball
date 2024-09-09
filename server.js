@@ -257,12 +257,15 @@ io.on('connection', function (socket) {
 
             if (readyUsers >= minPlayers && readyUsers === users.length) {
                 io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
+            setTimeout(function() {
                 gameStarted = true;
                 resetBall(); // Reset the ball at the start of the game
                 // Update ball position periodically
                 intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
                 // Activation of the interval to update players' positions
-                intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);
+                intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);              
+            }, 5000);                
+
             } else if (readyUsers >= minPlayers && readyUsers < users.length) {
                 socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
             } else if (readyUsers < minPlayers) {
