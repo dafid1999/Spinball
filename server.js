@@ -1,7 +1,5 @@
 const { log } = require('console');
 const express = require('express');
-const { read } = require('fs');
-const { get } = require('http');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
@@ -51,10 +49,9 @@ const ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
-    minSpeed: 5,
-    maxSpeed: 20,
+    speed: 5,
     dx: 0,
-    dy: 0,
+    dy: 0
 };
 
 function resetBall() {
@@ -68,8 +65,8 @@ function resetBall() {
     const length = Math.sqrt(dx * dx + dy * dy);
     dx /= length;
     dy /= length;
-    ball.dx = dx * ball.minSpeed;
-    ball.dy = dy * ball.minSpeed;
+    ball.dx = dx * ball.speed;
+    ball.dy = dy * ball.speed;
     users.forEach((user, index) => {
         if (index < positions.length) {
             user.position = { ...positions[index] };
@@ -85,11 +82,9 @@ function bounceFromWallWithMinValue() {
 
     if (Math.abs(ball.dx) < minValue) {
         ball.dx = ball.dx + Math.sign(ball.dx) * minValue;
-        log('Bounce from wall with min value', ball.dx, ball.dy);
     }
     if (Math.abs(ball.dy) < minValue) {
         ball.dy = ball.dy + Math.sign(ball.dy) * minValue;
-        log('Bounce from wall with min value', ball.dx, ball.dy);
     }
 }
 
@@ -121,7 +116,6 @@ function updateBallPosition() {
                 ball.dx = (ball.dy * 1.2);
                 ball.dy = -(ball.dy * 1.2);
             }
-            log(i + '. dx i dy: ', ball.dx, ball.dy);
         }
         // Check collision with the wall behind the player
         if (user.color === 'blue' && ball.x - ball.radius < user.position.x) { // Left wall collision
@@ -255,8 +249,6 @@ io.on('connection', function (socket) {
             }
         });
     }
-    // // Activation of the interval to update players' positions
-    // setInterval(updatePositions, 1000 / 60);
 
     socket.on('disconnect', function () {
         const index = users.findIndex(user => user.id === socket.id);
