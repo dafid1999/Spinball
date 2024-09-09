@@ -204,6 +204,9 @@ socket.on('playerLostLife', (data) => {
 socket.on('gameOver', (message) => {
     alert(message);
     isGameRunning = false;
+    players = [];
+    lastTime = 0;
+    accumulatedTime = 0;
     document.getElementById('mainCanvas').style.display = 'none';
-    document.getElementById('game').style.display = 'block';
+    document.getElementById('login').style.display = 'block';
 });

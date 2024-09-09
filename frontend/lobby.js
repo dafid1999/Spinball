@@ -41,13 +41,8 @@ socket.on('allPlayersReady', function (message) {
             document.getElementById('mainCanvas').style.display = 'block';
             startGame();
             drawPlayers();
+            document.getElementById('status').innerText = ``;
         }
     }, 1000);
-});
-
-// Listen for game over
-socket.on('gameOver', function (message) {
-    document.getElementById('game').style.display = 'block';
-    document.getElementById('mainCanvas').style.display = 'none';
 });
 

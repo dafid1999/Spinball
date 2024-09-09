@@ -11,9 +11,9 @@ const boardWidth = 800;
 const boardHeight = 800;
 const maxPlayers = 4;
 const minPlayers = 2;
-const users = [];
+let users = [];
 const userLives = 3;
-const movementData = {};
+let movementData = {};
 
 let gameStarted = false;
 let counterBouncesWithWalls = 0;
@@ -89,6 +89,7 @@ function bounceFromWallWithMinValue() {
 }
 
 function updateBallPosition() {
+if(gameStarted) {
     ball.x += ball.dx;
     ball.y += ball.dy;
     // Ball collision with the game board edges
@@ -138,6 +139,8 @@ function updateBallPosition() {
             io.sockets.emit('currentPlayers', users);
             if (users.length < minPlayers && gameStarted) {
                 io.sockets.emit('gameOver', 'Not enough players to continue the game.');
+                users = [];
+                movementData = {};
                 clearInterval(intervalUpdateBallPosition);
                 clearInterval(intervalUpdatePositions);
                 gameStarted = false;
@@ -148,7 +151,7 @@ function updateBallPosition() {
     });
     io.sockets.emit('ballMoved', ball);
 }
-
+}
 io.on('connection', function (socket) {
     console.log('A user connected #', socket.id);
 
@@ -196,15 +199,6 @@ io.on('connection', function (socket) {
 
     io.sockets.emit('currentPlayers', users);
 
-    function startGame() {
-        gameStarted = true;
-        resetBall(); // Reset the ball at the start of the game
-        // Update ball position periodically
-        intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
-        // Activation of the interval to update players' positions
-        intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);
-    }
-
     socket.on('playerReady', function () {
         const user = users.find(user => user.id === socket.id);
         if (user) {
@@ -214,7 +208,14 @@ io.on('connection', function (socket) {
 
             if (readyUsers >= minPlayers && readyUsers === users.length) {
                 io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-                setTimeout(startGame, 5000);
+                setTimeout(function() {
+                    gameStarted = true;
+                    resetBall(); // Reset the ball at the start of the game
+                    // Update ball position periodically
+                    intervalUpdateBallPosition = setInterval(updateBallPosition, 1000 / 60);
+                    // Activation of the interval to update players' positions
+                    intervalUpdatePositions = setInterval(updatePositions, 1000 / 60);              
+                }, 5000);                
             } else if (readyUsers >= minPlayers && readyUsers < users.length) {
                 socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
             } else if (readyUsers < minPlayers) {
