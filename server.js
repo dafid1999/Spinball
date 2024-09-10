@@ -88,10 +88,18 @@ function bounceFromWallWithMinValue() {
 }
 
 function updateBallPosition() {
-if(gameStarted) {
+    if (!gameStarted) return;
+
     ball.x += ball.dx;
     ball.y += ball.dy;
-    // Ball collision with the game board edges
+
+    handleBoardCollisions();
+    handlePlayerCollisions();
+
+    io.sockets.emit('ballMoved', ball);
+}
+
+function handleBoardCollisions() {
     if (ball.x + ball.radius > boardWidth || ball.x - ball.radius < 0) {
         ball.dx *= -1;
         bounceFromWallWithMinValue();
@@ -100,56 +108,75 @@ if(gameStarted) {
         ball.dy *= -1;
         bounceFromWallWithMinValue();
     }
-    // Ball collision with players and walls behind players
+}
+
+function handlePlayerCollisions() {
     users.forEach(user => {
-        // Check collision with player
-        if (
-            ball.x + ball.radius > user.position.x &&
-            ball.x - ball.radius < user.position.x + user.width &&
-            ball.y + ball.radius > user.position.y &&
-            ball.y - ball.radius < user.position.y + user.height
-        ) {
-            if(user.color === 'blue' || user.color === 'red') {
-                ball.dx = -(ball.dx * 1.2);
-                ball.dy = (ball.dy * 1.2);
-            } else if(user.color === 'green' || user.color === 'yellow') {
-                ball.dx = (ball.dy * 1.2);
-                ball.dy = -(ball.dy * 1.2);
-            }
+        if (!user.ready) return;
+
+        if (isBallCollidingWithPlayer(user)) {
+            adjustBallVelocityOnPlayerCollision(user);
         }
-        // Check collision with the wall behind the player
-        if (user.color === 'blue' && ball.x - ball.radius < user.position.x) { // Left wall collision
+
+        if (isBallCollidingWithPlayerWall(user)) {
             user.lives -= 1;
-            resetBall(); // Reset ball position after collision
-        } else if (user.color === 'red' && ball.x + ball.radius > user.position.x + user.width) { // Right wall collision
-            user.lives -= 1;
-            resetBall(); // Reset ball position after collision
-        } else if (user.color === 'green' && ball.y - ball.radius < user.position.y) { // Top wall collision
-            user.lives -= 1;
-            resetBall(); // Reset ball position after collision
-        } else if (user.color === 'yellow' && ball.y + ball.radius > user.position.y + user.height) { // Bottom wall collision
-            user.lives -= 1;
-            resetBall(); // Reset ball position after collision
-        }
-        // Check for game over
-        if (user.lives <= 0) {
-            // users.splice(users.indexOf(user), 1); // Remove player
-            user.ready = false;
-            io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
-            io.sockets.emit('currentPlayers', users);
-            if (users.filter(user => !user.ready).length < minPlayers && gameStarted) {
-                io.sockets.emit('gameOver', 'Not enough players to continue the game.');
-                movementData = {};
-                clearInterval(intervalMain);
-                gameStarted = false;
-            }
-        } else {
-            io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
+            resetBall();
+            checkGameOver(user);
         }
     });
-    io.sockets.emit('ballMoved', ball);
 }
+
+function isBallCollidingWithPlayer(user) {
+    return (
+        ball.x + ball.radius > user.position.x &&
+        ball.x - ball.radius < user.position.x + user.width &&
+        ball.y + ball.radius > user.position.y &&
+        ball.y - ball.radius < user.position.y + user.height
+    );
 }
+
+function adjustBallVelocityOnPlayerCollision(user) {
+    if (user.color === 'blue' || user.color === 'red') {
+        ball.dx = -(ball.dx * 1.2);
+        ball.dy = (ball.dy * 1.2);
+    } else if (user.color === 'green' || user.color === 'yellow') {
+        ball.dx = (ball.dx * 1.2);
+        ball.dy = -(ball.dy * 1.2);
+    }
+}
+
+function isBallCollidingWithPlayerWall(user) {
+    return (
+        (user.color === 'blue' && ball.x - ball.radius < user.position.x) ||
+        (user.color === 'red' && ball.x + ball.radius > user.position.x + user.width) ||
+        (user.color === 'green' && ball.y - ball.radius < user.position.y) ||
+        (user.color === 'yellow' && ball.y + ball.radius > user.position.y + user.height)
+    );
+}
+
+function resetReadyStatus() {
+    users.forEach(user => {
+        user.ready = false;
+        user.lives = userLives;
+    });
+}
+
+function checkGameOver(user) {
+    io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
+    io.sockets.emit('currentPlayers', users);
+
+    if (user.lives <= 0) {
+        user.ready = false;
+        if (users.filter(user => user.ready).length < minPlayers && gameStarted) {
+            io.sockets.emit('gameOver', 'Not enough players to continue the game.');
+            movementData = {};
+            clearInterval(intervalMain);
+            gameStarted = false;
+            resetReadyStatus();
+        }
+    }
+}
+
 io.on('connection', function (socket) {
     console.log('A user connected #', socket.id);
 
@@ -195,37 +222,45 @@ io.on('connection', function (socket) {
         }
     });
 
-    io.sockets.emit('currentPlayers', users);
-
     socket.on('playerReady', function () {
         const user = users.find(user => user.id === socket.id);
-        if (user) {
-            if(!gameStarted) {
-                user.ready = true;
-                const readyUsers = users.filter(user => user.ready).length;
-                log('users ready' + readyUsers);
-                if (readyUsers >= minPlayers && readyUsers === users.length) {
+        if (!user) return;
+
+        if (gameStarted) {
+            user.ready = false;
+            io.sockets.emit('gameIsStarted', 'Game started! You cannot join now.');
+            return;
+        }
+
+        user.ready = true;
+        const readyUsersCount = users.filter(user => user.ready).length;
+        log('users ready: ' + readyUsersCount);
+        log('users total: ' + users.length);
+
+        if(!gameStarted) {
+            if (readyUsersCount >= minPlayers) {
+                if (readyUsersCount === users.length) {
                     io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-                    setTimeout(function() {
-                        gameStarted = true;
-                        resetBall(); // Reset the ball at the start of the game
-                        // Update ball position periodically
-                        intervalMain = setInterval(function() {
-                            updateBallPosition();
-                            updatePositions();
-                        }, 1000 / 60);
-                    }, 5000);                
-                } else if (readyUsers >= minPlayers && readyUsers < users.length) {
-                    socket.emit('waiting', `Waiting for ${users.length - readyUsers} more players to be ready.`);
-                } else if (readyUsers < minPlayers) {
-                    socket.emit('waiting', `Waiting for ${minPlayers - readyUsers} more players `);
+                    startGameWithDelay(5000);
+                } else {
+                    socket.emit('waiting', `Waiting for ${users.length - readyUsersCount} more players to be ready.`);
                 }
             } else {
-                user.ready = false;
-                io.sockets.emit('gameIsStarted', 'Game started! You can not join now.');
+                socket.emit('waiting', `Waiting for ${minPlayers - readyUsersCount} more players.`);
             }
         }
     });
+
+    function startGameWithDelay(delay) {
+        gameStarted = true;
+        setTimeout(function() {
+            resetBall(); // Reset the ball at the start of the game
+            intervalMain = setInterval(function() {
+                updateBallPosition(); // Update the ball position
+                updatePositions(); // Update the positions of players
+            }, 1000 / 60);
+        }, delay);
+    }
 
     socket.on('playerMovement', function (data) {
         const user = users.find(user => user.id === socket.id);

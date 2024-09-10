@@ -210,5 +210,5 @@ socket.on('gameOver', (message) => {
     lastTime = 0;
     accumulatedTime = 0;
     document.getElementById('mainCanvas').style.display = 'none';
-    document.getElementById('login').style.display = 'block';
+    document.getElementById('game').style.display = 'block';
 });
