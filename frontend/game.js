@@ -2,8 +2,8 @@ const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 ctx.font = '20px Arial';
 
-const boardWidth = 800;
-const boardHeight = 800;
+const boardWidth = 700;
+const boardHeight = 700;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = boardWidth / 100;
@@ -59,45 +59,47 @@ function drawBoard() {
 function drawPlayers() {
     for (let playerId in players) {
         const player = players[playerId];
-        ctx.fillStyle = player.color;
-        ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
-        ctx.save();
+        if(player.ready){
+            ctx.fillStyle = player.color;
+            ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
+            ctx.save();
 
-        const textWidth = ctx.measureText(player.username).width;
-        let nameX, nameY, heartsX, heartsY;
-        let transX = boardX + player.position.x;
-        let transY = boardY + player.position.y;
-        ctx.translate(transX, transY);
-        ctx.rotate(player.angle * Math.PI / 180);
+            const textWidth = ctx.measureText(player.username).width;
+            let nameX, nameY, heartsX, heartsY;
+            let transX = boardX + player.position.x;
+            let transY = boardY + player.position.y;
+            ctx.translate(transX, transY);
+            ctx.rotate(player.angle * Math.PI / 180);
 
-        if (player.color === 'blue') {
-            nameX = (player.height - textWidth) / 2 - player.height;
-            nameY = -2.5 * player.width;
-            heartsX = (player.height - (player.lives * 25)) / 2 - player.height;
-            heartsY = -2 * player.width;
-        } else if (player.color === 'red') {
-            nameX = (player.height - textWidth) / 2;
-            nameY = -3.5 * player.width;
-            heartsX = (player.height - (player.lives * 25)) / 2;
-            heartsY = -3 * player.width;
-        } else if (player.color === 'green') {
-            nameX = (player.width - textWidth) / 2;
-            nameY = -2.5 * player.height;
-            heartsX = (player.width - player.lives * 25) / 2;
-            heartsY = -2 * player.height;
-        } else if (player.color === 'yellow') {
-            nameX = (player.width - textWidth) / 2;
-            nameY = 4.5 * player.height;
-            heartsX = (player.width - player.lives * 25) / 2;
-            heartsY = 2 * player.height;
-        }
-        // Draw player name
-        ctx.fillText(player.username, nameX, nameY);
-        // Draw player lives as hearts
-        for (let i = 0; i < player.lives; i++) {
-            ctx.drawImage(heartImage, heartsX + i * 25, heartsY, 20, 20);
-        }
-        ctx.restore();
+            if (player.color === 'blue') {
+                nameX = (player.height - textWidth) / 2 - player.height;
+                nameY = -2.5 * player.width;
+                heartsX = (player.height - (player.lives * 25)) / 2 - player.height;
+                heartsY = -2 * player.width;
+            } else if (player.color === 'red') {
+                nameX = (player.height - textWidth) / 2;
+                nameY = -3.5 * player.width;
+                heartsX = (player.height - (player.lives * 25)) / 2;
+                heartsY = -3 * player.width;
+            } else if (player.color === 'green') {
+                nameX = (player.width - textWidth) / 2;
+                nameY = -2.5 * player.height;
+                heartsX = (player.width - player.lives * 25) / 2;
+                heartsY = -2 * player.height;
+            } else if (player.color === 'yellow') {
+                nameX = (player.width - textWidth) / 2;
+                nameY = 4.5 * player.height;
+                heartsX = (player.width - player.lives * 25) / 2;
+                heartsY = 2 * player.height;
+            }
+            // Draw player name
+            ctx.fillText(player.username, nameX, nameY);
+            // Draw player lives as hearts
+            for (let i = 0; i < player.lives; i++) {
+                ctx.drawImage(heartImage, heartsX + i * 25, heartsY, 20, 20);
+            }
+            ctx.restore();
+         }
     }
 }
 

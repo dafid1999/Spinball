@@ -27,6 +27,11 @@ socket.on('waiting', function (message) {
     document.getElementById('status').innerText = message;
 });
 
+// Listen for player readiness confirmation
+socket.on('gameIsStarted', function (message) {
+    document.getElementById('status').innerText = message;
+});
+
 // Listen for all players being ready
 socket.on('allPlayersReady', function (message) {
     document.getElementById('status').innerText = message;
