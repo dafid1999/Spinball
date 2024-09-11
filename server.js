@@ -47,8 +47,8 @@ let ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
-    speed: 5,
-    maxSpeed: 15,
+    speed: 7,
+    maxSpeed: 20,
     dx: 0,
     dy: 0
 };
@@ -199,26 +199,30 @@ function isBallCollidingWithPlayer(user) {
 }
 
 function limitSpeed(speed, maxSpeed) {
-    if (speed > maxSpeed) {
-        return maxSpeed;
-    } else if (speed < -maxSpeed) {
-        return -maxSpeed;
+    const length = Math.sqrt(speed.x * speed.x + speed.y * speed.y);
+    if (length > maxSpeed) {
+        speed.x = (speed.x / length) * maxSpeed;
+        speed.y = (speed.y / length) * maxSpeed;
     }
     return speed;
 }
 
 function adjustBallVelocityOnPlayerCollision(user) {
+    const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+    const normalizedDx = ball.dx / speed;
+    const normalizedDy = ball.dy / speed;
     if (user.color === 'blue' || user.color === 'red') {
-        ball.dx = -(ball.dx * 1.2);
-        ball.dy = (ball.dy * 1.2);
+        ball.dx = -normalizedDx * (speed + 1);
+        ball.dy = normalizedDy * (speed + 1);
     } else if (user.color === 'green' || user.color === 'yellow') {
-        ball.dx = (ball.dx * 1.2);
-        ball.dy = -(ball.dy * 1.2);
+        ball.dx = normalizedDx * (speed + 1);
+        ball.dy = -normalizedDy * (speed + 1);
     }
     bounceWithMinValue();
     // Limit the speed to ball.maxSpeed
     ball.dx = limitSpeed(ball.dx, ball.maxSpeed);
     ball.dy = limitSpeed(ball.dy, ball.maxSpeed);
+    log('Ball after player collision: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
 }
 
 function isBallCollidingWithPlayerWall(user) {
