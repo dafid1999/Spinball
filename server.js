@@ -190,7 +190,7 @@ function resetReadyStatus() {
 function checkGameOver(user) {
     io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
     io.sockets.emit('currentPlayers', users);
-    io.sockets.emit('playerStateChanged', users);
+    
 
     if (user.lives <= 0) {
         user.ready = false;
@@ -204,6 +204,7 @@ function checkGameOver(user) {
             
         }
     }
+    io.sockets.emit('playerStateChanged', users);
 }
 
 function reorganizeUsers() {
