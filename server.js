@@ -190,6 +190,7 @@ function resetReadyStatus() {
 function checkGameOver(user) {
     io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
     io.sockets.emit('currentPlayers', users);
+    socket.emit('playerStateChanged', users);
 
     if (user.lives <= 0) {
         user.ready = false;
@@ -200,6 +201,7 @@ function checkGameOver(user) {
             gameStarted = false;
             resetReadyStatus();
             io.sockets.emit('gameOver', 'Game over. The winner is ' + winner.username);
+            socket.emit('playerStateChanged', users);
         }
     }
 }
@@ -218,6 +220,7 @@ function reorganizeUsers() {
         }
     });
     io.sockets.emit('currentPlayers', users);
+    socket.emit('playerStateChanged', users);
 }
 
 io.on('connection', function (socket) {
@@ -262,6 +265,7 @@ io.on('connection', function (socket) {
 
             io.sockets.emit('currentPlayers', users);
             console.log(`${data} has joined`);
+            socket.emit('playerStateChanged', users);
         }
     });
 
@@ -278,7 +282,7 @@ io.on('connection', function (socket) {
         user.ready = true;
         const readyUsersCount = users.filter(user => user.ready).length;
         log('users total: ' + users.length +' users ready: ' + readyUsersCount);
-
+        socket.emit('playerStateChanged', users);
         if(!gameStarted) {
             if (readyUsersCount >= minPlayers) {
                 if (readyUsersCount === users.length) {
@@ -337,6 +341,7 @@ io.on('connection', function (socket) {
             console.log(`${users[index].username} has disconnected.`);
             users.splice(index, 1);
             reorganizeUsers();
+            socket.emit('playerStateChanged', users);
         }
     });
 });

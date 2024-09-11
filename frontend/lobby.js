@@ -51,6 +51,20 @@ socket.on('allPlayersReady', function (message) {
     }, 1000);
 });
 
+function updateOnlinePlayers(players) {
+    const onlinePlayers = document.getElementById('playersOnline');
+    onlinePlayers.innerHTML = '';
+    players.forEach(player => {
+        const playerElement = document.createElement('div');
+        playerElement.innerText = `${player.username} - ${player.ready ? 'ready' : 'not ready'}`;
+        onlinePlayers.appendChild(playerElement);
+    });
+}
+
+socket.on('playerStateChanged', function (players) {
+    updateOnlinePlayers(players);
+});
+
 socket.on('gameStarting', function (message) {
     startGame();
     drawPlayers();
