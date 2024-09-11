@@ -21,7 +21,13 @@
         <div id="game" style="display:none;">
             <h2>Welcome, <span id="userDisplay"></span>!</h2>
             <p>Your assigned position is: <span id="position"></span></p>
-            <button onclick="markReady()">I'm Ready</button>
+            <button id="readyButton" onclick="markReady()">I'm Ready</button>
+            <script>
+                const readyButton = document.getElementById('readyButton');
+                readyButton.addEventListener('click', function () {
+                    this.disabled = true;
+                });
+            </script>
             <p id="status"></p>
             <div id="playersOnline"></div>
         </div>
