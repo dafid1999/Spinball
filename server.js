@@ -48,21 +48,41 @@ let ball = {
     y: boardHeight / 2,
     radius: 10,
     speed: 5,
-    maxSpeed: 20,
+    maxSpeed: 15,
     dx: 0,
     dy: 0
 };
 
+function isCollidingWithBallStartPosition(obstacle) {
+    const ballStartX = boardWidth / 2;
+    const ballStartY = boardHeight / 2;
+    const ballRadius = ball.radius;
+
+    return (
+        ballStartX + ballRadius > obstacle.x &&
+        ballStartX - ballRadius < obstacle.x + obstacle.width &&
+        ballStartY + ballRadius > obstacle.y &&
+        ballStartY - ballRadius < obstacle.y + obstacle.height
+    );
+}
+
 function generateObstacles() {
     obstacles.length = 0;
-    for (let i = 0; i < 3; i++) {
-        obstacles.push({
-            x: Math.random() * (boardWidth - 100),
-            y: Math.random() * (boardHeight - 100),
-            width: 50 + Math.random() * 50,
-            height: 50 + Math.random() * 50,
-            cornerRadius: 10
-        });
+    const numberOfObstacles = 3;
+    // Generating random obstacles
+    for (let i = 0; i < numberOfObstacles; i++) {
+        let obstacle;
+        do {
+            obstacle = {
+                x: Math.random() * (boardWidth - 100),
+                y: Math.random() * (boardHeight - 100),
+                width: 50 + Math.random() * 50,
+                height: 50 + Math.random() * 50,
+                cornerRadius: 10
+            };
+        } while (isCollidingWithBallStartPosition(obstacle));
+        // Adding the obstacle to the obstacles array
+        obstacles.push(obstacle);
     }
 }
 
@@ -91,7 +111,7 @@ function resetBall() {
     log('Ball reset: dx i dy ' + ball.dx, ball.dy);
 }
 
-function bounceFromWallWithMinValue() {
+function bounceWithMinValue() {
     const minValue = 0.5;
     if (Math.abs(ball.dx) < minValue) {
         ball.dx += Math.sign(ball.dx) * minValue;
@@ -99,6 +119,34 @@ function bounceFromWallWithMinValue() {
     if (Math.abs(ball.dy) < minValue) {
         ball.dy += Math.sign(ball.dy) * minValue;
     }
+}
+
+function handleObstacleCollisions() {
+    obstacles.forEach(obstacle => {
+        if (
+            ball.x + ball.radius > obstacle.x &&
+            ball.x - ball.radius < obstacle.x + obstacle.width &&
+            ball.y + ball.radius > obstacle.y &&
+            ball.y - ball.radius < obstacle.y + obstacle.height
+        ) {
+            // Determine the side of the collision
+            const overlapX = Math.min(
+                ball.x + ball.radius - obstacle.x, // This represents the distance from the right edge of the ball to the left edge of the obstacle.
+                obstacle.x + obstacle.width - (ball.x - ball.radius) // This represents the distance from the right edge of the obstacle to the left edge of the ball.
+            );
+            const overlapY = Math.min(
+                ball.y + ball.radius - obstacle.y, // This represents the distance from the bottom edge of the ball to the top edge of the obstacle.
+                obstacle.y + obstacle.height - (ball.y - ball.radius) // This represents the distance from the bottom edge of the obstacle to the top edge of the ball.
+            );
+
+            if (overlapX < overlapY) {
+                ball.dx *= -1;
+            } else {
+                ball.dy *= -1;
+            }
+            bounceWithMinValue();
+        }
+    });
 }
 
 function updateBallPosition() {
@@ -109,6 +157,7 @@ function updateBallPosition() {
 
     handleBoardCollisions();
     handlePlayerCollisions();
+    handleObstacleCollisions();
 
     io.sockets.emit('ballMoved', ball);
 }
@@ -116,11 +165,11 @@ function updateBallPosition() {
 function handleBoardCollisions() {
     if (ball.x + ball.radius > boardWidth || ball.x - ball.radius < 0) {
         ball.dx *= -1;
-        bounceFromWallWithMinValue();
+        bounceWithMinValue();
     }
     if (ball.y + ball.radius > boardHeight || ball.y - ball.radius < 0) {
         ball.dy *= -1;
-        bounceFromWallWithMinValue();
+        bounceWithMinValue();
     }
 }
 
@@ -166,6 +215,7 @@ function adjustBallVelocityOnPlayerCollision(user) {
         ball.dx = (ball.dx * 1.2);
         ball.dy = -(ball.dy * 1.2);
     }
+    bounceWithMinValue();
     // Limit the speed to ball.maxSpeed
     ball.dx = limitSpeed(ball.dx, ball.maxSpeed);
     ball.dy = limitSpeed(ball.dy, ball.maxSpeed);
