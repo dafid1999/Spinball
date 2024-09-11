@@ -116,31 +116,32 @@ function bounceWithMinValue() {
     const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
     let normDx = ball.dx / speed;
     let normDy = ball.dy / speed;
-    log('Min bounce norm DX i DY ' + normDx, normDy);
-    if (Math.abs(normDx) < minValue) {
-        ball.dx = (normDx + Math.sign(normDx) * minValue) * speed;
-        log('Min bounce was applied to DX' + ball.dx);
-    } else if(Math.abs(normDx) > 1 - minValue) {
+    log('Checking min bounce');
+    if(Math.abs(normDx) > 1 - minValue) {
         ball.dx = (normDx - Math.sign(normDx) * minValue) * speed;
-        log('Min bounce was applied to DX' + ball.dx);
+        log('Min bounce was applied to DX ' + ball.dx);
+        log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
     }
-    if (Math.abs(normDy) < minValue) {
-        ball.dy =  (normDy + Math.sign(normDy) * minValue) * speed;
-        log('Min bounce was applied to DY' + ball.dy);
-    } else if(Math.abs(normDy) > 1 - minValue) {
+    if(Math.abs(normDy) > 1 - minValue) {
         ball.dy = (normDy - Math.sign(normDy) * minValue) * speed;
-        log('Min bounce was applied to DY' + ball.dy);
+        log('Min bounce was applied to DY ' + ball.dy);
+        log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
     }
 }
 
+function isBallCollidingWithObstacle(obstacle) {
+    return (
+        ball.x + ball.radius > obstacle.x &&
+        ball.x - ball.radius < obstacle.x + obstacle.width &&
+        ball.y + ball.radius > obstacle.y &&
+        ball.y - ball.radius < obstacle.y + obstacle.height
+    );
+}
+
+
 function handleObstacleCollisions() {
     obstacles.forEach(obstacle => {
-        if (
-            ball.x + ball.radius > obstacle.x &&
-            ball.x - ball.radius < obstacle.x + obstacle.width &&
-            ball.y + ball.radius > obstacle.y &&
-            ball.y - ball.radius < obstacle.y + obstacle.height
-        ) {
+        if (isBallCollidingWithObstacle(obstacle)) {
             // Determine the side of the collision
             const overlapX = Math.min(
                 ball.x + ball.radius - obstacle.x, // This represents the distance from the right edge of the ball to the left edge of the obstacle.
@@ -156,9 +157,66 @@ function handleObstacleCollisions() {
             } else {
                 ball.dy *= -1;
             }
+            // Check if ball stuck inside the obstacle
+            if (ball.x + ball.radius > obstacle.x && ball.x - ball.radius < obstacle.x) {
+                ball.x = obstacle.x - ball.radius;
+            } else if (ball.x - ball.radius < obstacle.x + obstacle.width && ball.x + ball.radius > obstacle.x + obstacle.width) {
+                ball.x = obstacle.x + obstacle.width + ball.radius;
+            }
+
+            if (ball.y + ball.radius > obstacle.y && ball.y - ball.radius < obstacle.y) {
+                ball.y = obstacle.y - ball.radius;
+            } else if (ball.y - ball.radius < obstacle.y + obstacle.height && ball.y + ball.radius > obstacle.y + obstacle.height) {
+                ball.y = obstacle.y + obstacle.height + ball.radius;
+            }
             bounceWithMinValue();
         }
     });
+}
+
+function preventBallStuck() {
+    let margin = 5;
+    if (ball.x > boardWidth) {
+        ball.x = boardWidth - ball.radius - margin;
+    } else if (ball.x - ball.radius < 0) {
+        ball.x = ball.radius + margin;
+    }
+
+    if (ball.y + ball.radius > boardHeight) {
+        ball.y = boardHeight - ball.radius - margin;
+    } else if (ball.y < 0) {
+        ball.y = ball.radius + margin;
+    }
+
+    for (let obstacle of obstacles) {
+        if (isBallCollidingWithObstacle(obstacle)) {
+            if (ball.x < obstacle.x) {
+                ball.x = obstacle.x - ball.radius - margin;
+            } else if (ball.x > obstacle.x + obstacle.width) {
+                ball.x = obstacle.x + obstacle.width + ball.radius + margin;
+            }
+            if (ball.y < obstacle.y) {
+                ball.y = obstacle.y - ball.radius - margin;
+            } else if (ball.y > obstacle.y + obstacle.height) {
+                ball.y = obstacle.y + obstacle.height + ball.radius + margin;
+            }
+        }
+    }
+
+    // for (let user of users) {
+    //     if (isBallCollidingWithPlayer(user)) {
+    //         if (ball.x < user.position.x) {
+    //             ball.x = user.position.x - ball.radius - margin;
+    //         } else if (ball.x > user.position.x) {
+    //             ball.x = user.position.x + ball.radius + margin;
+    //         }
+    //         if (ball.y < user.position.y) {
+    //             ball.y = user.position.y - ball.radius - margin;
+    //         } else if (ball.y > user.position.y) {
+    //             ball.y = user.position.y + ball.radius + margin;
+    //         }
+    //     }
+    // }
 }
 
 function updateBallPosition() {
@@ -170,6 +228,7 @@ function updateBallPosition() {
     handleBoardCollisions();
     handlePlayerCollisions();
     handleObstacleCollisions();
+    preventBallStuck();
 
     io.sockets.emit('ballMoved', ball);
 }
