@@ -240,14 +240,25 @@ io.on('connection', function (socket) {
         if(!gameStarted) {
             if (readyUsersCount >= minPlayers) {
                 if (readyUsersCount === users.length) {
-                    io.sockets.emit('allPlayersReady', 'All players are ready! The game will now start.');
-                    startGameWithDelay(5000);
+                    io.sockets.emit('allPlayersReady', 'All players are ready!');
                 } else {
                     socket.emit('waiting', `Waiting for ${users.length - readyUsersCount} more players to be ready.`);
                 }
             } else {
                 socket.emit('waiting', `Waiting for ${minPlayers - readyUsersCount} more players.`);
             }
+        }
+    });
+
+    socket.on('startGame', function () {
+        if(!gameStarted) {
+            gameStarted = true;
+            resetBall(); // Reset the ball at the start of the game
+            intervalMain = setInterval(function() {
+                updateBallPosition(); // Update the ball position
+                updatePositions(); // Update the positions of players
+            }, 1000 / 60);
+            io.sockets.emit('gameStarting', 'Game is starting...');
         }
     });
 

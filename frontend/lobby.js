@@ -42,12 +42,15 @@ socket.on('allPlayersReady', function (message) {
         countdown--;
         if (countdown < 0) {
             clearInterval(countdownInterval);
-            document.getElementById('game').style.display = 'none';
-            document.getElementById('mainCanvas').style.display = 'block';
-            startGame();
-            drawPlayers();
-            document.getElementById('status').innerText = ``;
+            socket.emit('startGame');
         }
     }, 1000);
 });
 
+socket.on('gameStarting', function (message) {
+    document.getElementById('game').style.display = 'none';
+    document.getElementById('mainCanvas').style.display = 'block';
+    startGame();
+    drawPlayers();
+    document.getElementById('status').innerText = ``;
+});
