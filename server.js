@@ -3,7 +3,6 @@ const express = require('express');
 const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
-const path = require('path');
 
 app.use(express.static('frontend'));
 
@@ -11,10 +10,9 @@ const boardWidth = 700;
 const boardHeight = 700;
 const maxPlayers = 4;
 const minPlayers = 2;
-let users = [];
 const userLives = 3;
+let users = [];
 let movementData = {};
-
 let gameStarted = false;
 let intervalMain;
 
@@ -23,7 +21,7 @@ const playerSize = [
     { x: boardWidth / 4, y: boardHeight / 40 }
 ];
 
-let positions = [
+const positions = [
     { x: 0, y: (boardHeight - playerSize[0].y) / 2 },    // Position for the 1st player
     { x: boardWidth - playerSize[0].x, y: (boardHeight - playerSize[0].y) / 2 },  // Position for the 2nd player
     { x: (boardWidth - playerSize[1].x) / 2, y: 0 },    // Position for the 3rd player
@@ -44,11 +42,12 @@ const angles = [
     0
 ];
 
-const ball = {
+let ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
     speed: 5,
+    maxSpeed: 20,
     dx: 0,
     dy: 0
 };
@@ -60,30 +59,28 @@ function resetBall() {
         if (index < positions.length) {
             user.position = { ...positions[index] };
         }
-        log('User position: x i y ' + user.position.x, user.position.y);
     });
     io.sockets.emit('currentPlayers', users);
-    // Losowanie losowych wartości kierunkowych dx i dy w zakresie od -1 do 1
+    // Generating random direction values for dx and dy in the range from -1 to 1
     let dx = (Math.random() * 2) - 1;
     let dy = (Math.random() * 2) - 1;
-    // Normalizacja kierunku, aby uzyskać wektor jednostkowy
+    // Normalizing the direction to obtain a unit vector
     const length = Math.sqrt(dx * dx + dy * dy);
     dx /= length;
     dy /= length;
     ball.dx = dx * ball.speed;
     ball.dy = dy * ball.speed;
     io.sockets.emit('ballMoved', ball);
-    log('Ball reset: x i y ' + ball.x, ball.y +  ' | dx i dy ' + ball.dx, ball.dy);
+    log('Ball reset: dx i dy ' + ball.dx, ball.dy);
 }
 
 function bounceFromWallWithMinValue() {
-    const minValue = 0.3;
-
+    const minValue = 0.5;
     if (Math.abs(ball.dx) < minValue) {
-        ball.dx = ball.dx + Math.sign(ball.dx) * minValue;
+        ball.dx += Math.sign(ball.dx) * minValue;
     }
     if (Math.abs(ball.dy) < minValue) {
-        ball.dy = ball.dy + Math.sign(ball.dy) * minValue;
+        ball.dy += Math.sign(ball.dy) * minValue;
     }
 }
 
@@ -135,6 +132,15 @@ function isBallCollidingWithPlayer(user) {
     );
 }
 
+function limitSpeed(speed, maxSpeed) {
+    if (speed > maxSpeed) {
+        return maxSpeed;
+    } else if (speed < -maxSpeed) {
+        return -maxSpeed;
+    }
+    return speed;
+}
+
 function adjustBallVelocityOnPlayerCollision(user) {
     if (user.color === 'blue' || user.color === 'red') {
         ball.dx = -(ball.dx * 1.2);
@@ -143,6 +149,9 @@ function adjustBallVelocityOnPlayerCollision(user) {
         ball.dx = (ball.dx * 1.2);
         ball.dy = -(ball.dy * 1.2);
     }
+    // Limit the speed to ball.maxSpeed
+    ball.dx = limitSpeed(ball.dx, ball.maxSpeed);
+    ball.dy = limitSpeed(ball.dy, ball.maxSpeed);
 }
 
 function isBallCollidingWithPlayerWall(user) {
@@ -223,7 +232,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('playerReady', function () {
-        const user = users.find(user => user.id === socket.id);
+        let user = users.find(user => user.id === socket.id);
         if (!user) return;
 
         if (gameStarted) {
@@ -234,8 +243,7 @@ io.on('connection', function (socket) {
 
         user.ready = true;
         const readyUsersCount = users.filter(user => user.ready).length;
-        log('users ready: ' + readyUsersCount);
-        log('users total: ' + users.length);
+        log('users total: ' + users.length +' users ready: ' + readyUsersCount);
 
         if(!gameStarted) {
             if (readyUsersCount >= minPlayers) {
@@ -261,17 +269,6 @@ io.on('connection', function (socket) {
             io.sockets.emit('gameStarting', 'Game is starting...');
         }
     });
-
-    function startGameWithDelay(delay) {
-        gameStarted = true;
-        setTimeout(function() {
-            resetBall(); // Reset the ball at the start of the game
-            intervalMain = setInterval(function() {
-                updateBallPosition(); // Update the ball position
-                updatePositions(); // Update the positions of players
-            }, 1000 / 60);
-        }, delay);
-    }
 
     socket.on('playerMovement', function (data) {
         const user = users.find(user => user.id === socket.id);

@@ -43,14 +43,14 @@ socket.on('allPlayersReady', function (message) {
         if (countdown < 0) {
             clearInterval(countdownInterval);
             socket.emit('startGame');
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('mainCanvas').style.display = 'block';
+            document.getElementById('status').innerText = ``;
         }
     }, 1000);
 });
 
 socket.on('gameStarting', function (message) {
-    document.getElementById('game').style.display = 'none';
-    document.getElementById('mainCanvas').style.display = 'block';
     startGame();
     drawPlayers();
-    document.getElementById('status').innerText = ``;
 });
