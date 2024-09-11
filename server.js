@@ -112,12 +112,24 @@ function resetBall() {
 }
 
 function bounceWithMinValue() {
-    const minValue = 0.5;
-    if (Math.abs(ball.dx) < minValue) {
-        ball.dx += Math.sign(ball.dx) * minValue;
+    const minValue = 0.2;
+    const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+    let normDx = ball.dx / speed;
+    let normDy = ball.dy / speed;
+    log('Min bounce norm DX i DY ' + normDx, normDy);
+    if (Math.abs(normDx) < minValue) {
+        ball.dx = (normDx + Math.sign(normDx) * minValue) * speed;
+        log('Min bounce was applied to DX' + ball.dx);
+    } else if(Math.abs(normDx) > 1 - minValue) {
+        ball.dx = (normDx - Math.sign(normDx) * minValue) * speed;
+        log('Min bounce was applied to DX' + ball.dx);
     }
-    if (Math.abs(ball.dy) < minValue) {
-        ball.dy += Math.sign(ball.dy) * minValue;
+    if (Math.abs(normDy) < minValue) {
+        ball.dy =  (normDy + Math.sign(normDy) * minValue) * speed;
+        log('Min bounce was applied to DY' + ball.dy);
+    } else if(Math.abs(normDy) > 1 - minValue) {
+        ball.dy = (normDy - Math.sign(normDy) * minValue) * speed;
+        log('Min bounce was applied to DY' + ball.dy);
     }
 }
 
@@ -198,13 +210,13 @@ function isBallCollidingWithPlayer(user) {
     );
 }
 
-function limitSpeed(speed, maxSpeed) {
-    const length = Math.sqrt(speed.x * speed.x + speed.y * speed.y);
-    if (length > maxSpeed) {
-        speed.x = (speed.x / length) * maxSpeed;
-        speed.y = (speed.y / length) * maxSpeed;
+function limitSpeed() {
+    const length = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+    if (length > ball.maxSpeed) {
+        ball.dx = (ball.dx / length) * ball.maxSpeed;
+        ball.dy = (ball.dy / length) * ball.maxSpeed;
     }
-    return speed;
+    log('Ball after limit speed: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
 }
 
 function adjustBallVelocityOnPlayerCollision(user) {
@@ -220,9 +232,9 @@ function adjustBallVelocityOnPlayerCollision(user) {
     }
     bounceWithMinValue();
     // Limit the speed to ball.maxSpeed
-    ball.dx = limitSpeed(ball.dx, ball.maxSpeed);
-    ball.dy = limitSpeed(ball.dy, ball.maxSpeed);
+    limitSpeed();
     log('Ball after player collision: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
+    log('Ball after player collision: dx i dy ' + ball.dx, ball.dy);
 }
 
 function isBallCollidingWithPlayerWall(user) {
