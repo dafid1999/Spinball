@@ -234,7 +234,12 @@ io.on('connection', function (socket) {
     }
 
     socket.on('setUsername', function (data) {
-        if (users.find(user => user.username === data)) {
+        const username = data.trim();
+        if (username.length > 16) {
+            socket.emit('invalidUsername', 'Username is too long. Please choose a username with 16 characters or less.');
+        } else if (!/^[a-zA-Z0-9]+$/.test(username)) {
+            socket.emit('invalidUsername', 'Username can only contain letters and numbers.');
+        } else if (users.find(user => user.username === username)) {
             socket.emit('userExists', data + ' username is taken! Try another username.');
         } else {
             let width = playerSize[0].x;

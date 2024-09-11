@@ -23,6 +23,10 @@ socket.on('lobbyFull', function (message) {
     document.getElementById('status').innerText = message;
 });
 
+socket.on('invalidUsername', function (message) {
+    document.getElementById('statusNick').innerText = message;
+});
+
 // Listen for player readiness
 socket.on('waiting', function (message) {
     document.getElementById('status').innerText = 'You are ready! ' + message;
