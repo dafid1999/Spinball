@@ -8,6 +8,7 @@ const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = boardWidth / 100;
 let players = [];
+let obstacles = [];
 let isGameRunning = false;
 let lastTime = 0;
 let accumulatedTime = 0;
@@ -17,7 +18,7 @@ const frameTime = 1000 / FPS;
 const playerSpeed = 300;
 
 // Ball object
-const ball = {
+let ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
@@ -110,6 +111,23 @@ function drawBall() {
     ctx.arc(boardX + ball.x, boardY + ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
 }
+// Function to draw obstacles
+function drawObstacles() {
+    ctx.fillStyle = 'gray';
+    obstacles.forEach(obstacle => {
+        ctx.beginPath();
+        ctx.moveTo(boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.lineTo(boardX + obstacle.x + obstacle.width - obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.quadraticCurveTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y, boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.cornerRadius);
+        ctx.lineTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.height - obstacle.cornerRadius);
+        ctx.quadraticCurveTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.height, boardX + obstacle.x + obstacle.width - obstacle.cornerRadius, boardY + obstacle.y + obstacle.height);
+        ctx.lineTo(boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y + obstacle.height);
+        ctx.quadraticCurveTo(boardX + obstacle.x, boardY + obstacle.y + obstacle.height, boardX + obstacle.x, boardY + obstacle.y + obstacle.height - obstacle.cornerRadius);
+        ctx.lineTo(boardX + obstacle.x, boardY + obstacle.y + obstacle.cornerRadius);
+        ctx.quadraticCurveTo(boardX + obstacle.x, boardY + obstacle.y, boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.fill();
+    });
+}
 
 // Function to update player position
 function updatePlayerPosition(deltaTime) {
@@ -154,6 +172,7 @@ function gameLoop(timestamp) {
         drawBoard();
         drawPlayers();
         drawBall();
+        drawObstacles();
         if (accumulatedTime >= frameTime) {
             updatePlayerPosition(frameTime / 1000);
             accumulatedTime -= frameTime;
@@ -167,6 +186,10 @@ function startGame() {
     isGameRunning = true;
     gameLoop();
 }
+
+socket.on('obstaclesUpdated', (serverObstacles) => {
+    obstacles = serverObstacles;
+})
 
 // Listen for ball position updates
 socket.on('ballMoved', (serverBall) => {

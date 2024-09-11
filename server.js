@@ -11,6 +11,7 @@ const boardHeight = 700;
 const maxPlayers = 4;
 const minPlayers = 2;
 const userLives = 3;
+const obstacles = [];
 let users = [];
 let movementData = {};
 let gameStarted = false;
@@ -52,6 +53,19 @@ let ball = {
     dy: 0
 };
 
+function generateObstacles() {
+    obstacles.length = 0;
+    for (let i = 0; i < 3; i++) {
+        obstacles.push({
+            x: Math.random() * (boardWidth - 100),
+            y: Math.random() * (boardHeight - 100),
+            width: 50 + Math.random() * 50,
+            height: 50 + Math.random() * 50,
+            cornerRadius: 10
+        });
+    }
+}
+
 function resetBall() {
     ball.x = boardWidth / 2;
     ball.y = boardHeight / 2;
@@ -71,6 +85,9 @@ function resetBall() {
     ball.dx = dx * ball.speed;
     ball.dy = dy * ball.speed;
     io.sockets.emit('ballMoved', ball);
+    // Generating obstacles
+    generateObstacles();
+    io.sockets.emit('obstaclesUpdated', obstacles);
     log('Ball reset: dx i dy ' + ball.dx, ball.dy);
 }
 
