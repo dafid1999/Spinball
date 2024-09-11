@@ -7,6 +7,7 @@ function setUsername() {
 
 function markReady() {
     socket.emit('playerReady');
+    document.getElementById('status').innerText = 'You are ready!';
 }
 
 // Listen for username set confirmation
@@ -19,12 +20,12 @@ socket.on('userSet', function (data) {
 
 // Listen for a full lobby
 socket.on('lobbyFull', function (message) {
-    alert(message);
+    document.getElementById('status').innerText = message;
 });
 
 // Listen for player readiness
 socket.on('waiting', function (message) {
-    document.getElementById('status').innerText = message;
+    document.getElementById('status').innerText = 'You are ready! ' + message;
 });
 
 // Listen for player readiness confirmation

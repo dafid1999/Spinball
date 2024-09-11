@@ -204,11 +204,11 @@ socket.on('playerLostLife', (data) => {
 
 // Listen for game over
 socket.on('gameOver', (message) => {
-    alert(message);
     isGameRunning = false;
     players = [];
     lastTime = 0;
     accumulatedTime = 0;
     document.getElementById('mainCanvas').style.display = 'none';
     document.getElementById('game').style.display = 'block';
+    document.getElementById('status').innerText = message;
 });

@@ -177,13 +177,30 @@ function checkGameOver(user) {
     if (user.lives <= 0) {
         user.ready = false;
         if (users.filter(user => user.ready).length < minPlayers && gameStarted) {
-            io.sockets.emit('gameOver', 'Not enough players to continue the game.');
+            const winner = users.find(user => user.ready);
             movementData = {};
             clearInterval(intervalMain);
             gameStarted = false;
             resetReadyStatus();
+            io.sockets.emit('gameOver', 'Game over. The winner is ' + winner.username);
         }
     }
+}
+
+function reorganizeUsers() {
+    users.forEach((user, index) => {
+        user.position = positions[index];
+        user.color = colors[index];
+        user.angle = angles[index];
+        if (index === 2 || index === 3) {
+            user.width = playerSize[1].x;
+            user.height = playerSize[1].y;
+        } else {
+            user.width = playerSize[0].x;
+            user.height = playerSize[0].y;
+        }
+    });
+    io.sockets.emit('currentPlayers', users);
 }
 
 io.on('connection', function (socket) {
@@ -302,7 +319,7 @@ io.on('connection', function (socket) {
         if (index !== -1) {
             console.log(`${users[index].username} has disconnected.`);
             users.splice(index, 1);
-            io.sockets.emit('currentPlayers', users);
+            reorganizeUsers();
         }
     });
 });
