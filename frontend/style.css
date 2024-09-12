@@ -1,0 +1,18 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #c9c9c9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game {
+    display: none;
+}
+
+canvas {
+    display: none;
+}

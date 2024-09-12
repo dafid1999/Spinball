@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinball Game</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="/images/favicon.ico">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <div>
+        <div id="login">
+            <h1>Spinball Lobby</h1>
+            <input type="text" id="username" placeholder="Enter your username" />
+            <button onclick="setUsername()">Set Username</button>
+            <p id="statusNick"></p>
+        </div>
+        <div id="game" style="display:none;">
+            <h2>Welcome, <span id="userDisplay"></span>!</h2>
+            <p>Your assigned position is: <span id="position"></span></p>
+            <button id="readyButton" onclick="markReady()">I'm Ready</button>
+            <script>
+                const readyButton = document.getElementById('readyButton');
+                readyButton.addEventListener('click', function () {
+                    this.disabled = true;
+                });
+            </script>
+            <p id="status"></p>
+            <div id="playersOnline"></div>
+        </div>
+    </div>
+    <canvas id="mainCanvas" width="1600" height="900" style="display:none;"></canvas>
+    <script src="/lobby.js"></script>
+    <script src="/game.js"></script>
+</body>
+
+</html>
