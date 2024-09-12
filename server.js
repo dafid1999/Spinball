@@ -47,7 +47,7 @@ let ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
-    speed: 7,
+    speed: 5,
     maxSpeed: 20,
     dx: 0,
     dy: 0
@@ -112,22 +112,29 @@ function resetBall() {
 }
 
 function bounceWithMinValue() {
-    const minValue = 0.1 + Math.random() * 0.2;
+    const minAngle = 10;
+    const maxAngle = 80;
     const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
     let normDx = ball.dx / speed;
     let normDy = ball.dy / speed;
+
+    let angle = Math.atan2(normDy, normDx);
+    let angleDeg = angle * 180 / Math.PI;
     log('Checking min bounce');
-    if(Math.abs(normDx) > 1 - minValue) {
-        ball.dx = Math.sign(normDx) * minValue
-        log('Min bounce was applied to DX ' + ball.dx);
+    if (Math.abs(angleDeg) < minAngle) {
+        angleDeg = minAngle * Math.sign(angleDeg);
+        log('min bounce ' + angleDeg);
+    } else if (Math.abs(angleDeg) > (180 - minAngle)) {
+        angleDeg = (180 - minAngle) * Math.sign(angleDeg);
+        log('min bounce ' + angleDeg);
+    } else if (Math.abs(angleDeg) > maxAngle && Math.abs(angleDeg) < (180 - maxAngle)) {
+        angleDeg = maxAngle * Math.sign(angleDeg);
+        log('max bounce ' + angleDeg);
     }
-    if(Math.abs(normDy) > 1 - minValue) {
-        ball.dy = Math.sign(normDy) * minValue
-        log('Min bounce was applied to DY ' + ball.dy);
-    }
-    ball.dx = normDx * speed;
-    ball.dy = normDy * speed;
-    log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
+    const adjustedAngle = angleDeg * (Math.PI / 180);
+
+    ball.dx = Math.cos(adjustedAngle) * speed;
+    ball.dy = Math.sin(adjustedAngle) * speed;
 }
 
 function isBallCollidingWithObstacle(obstacle) {
@@ -249,6 +256,7 @@ function handlePlayerCollisions() {
 
         if (isBallCollidingWithPlayer(user)) {
             adjustBallVelocityOnPlayerCollision(user);
+            bounceWithMinValue();
         }
 
         if (isBallCollidingWithPlayerWall(user)) {
@@ -288,7 +296,6 @@ function adjustBallVelocityOnPlayerCollision(user) {
         ball.dx = normalizedDx * (speed + 1);
         ball.dy = -normalizedDy * (speed + 1);
     }
-    bounceWithMinValue();
     // Limit the speed to ball.maxSpeed
     limitSpeed();
     log('Ball after player collision: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
