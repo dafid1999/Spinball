@@ -2,12 +2,13 @@ const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 ctx.font = '20px Arial';
 
-const boardWidth = 800;
-const boardHeight = 800;
+const boardWidth = 700;
+const boardHeight = 700;
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 const borderWidth = boardWidth / 100;
 let players = [];
+let obstacles = [];
 let isGameRunning = false;
 let lastTime = 0;
 let accumulatedTime = 0;
@@ -17,7 +18,7 @@ const frameTime = 1000 / FPS;
 const playerSpeed = 300;
 
 // Ball object
-const ball = {
+let ball = {
     x: boardWidth / 2,
     y: boardHeight / 2,
     radius: 10,
@@ -59,45 +60,47 @@ function drawBoard() {
 function drawPlayers() {
     for (let playerId in players) {
         const player = players[playerId];
-        ctx.fillStyle = player.color;
-        ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
-        ctx.save();
+        if(player.ready){
+            ctx.fillStyle = player.color;
+            ctx.fillRect(boardX + player.position.x, boardY + player.position.y, player.width, player.height);
+            ctx.save();
 
-        const textWidth = ctx.measureText(player.username).width;
-        let nameX, nameY, heartsX, heartsY;
-        let transX = boardX + player.position.x;
-        let transY = boardY + player.position.y;
-        ctx.translate(transX, transY);
-        ctx.rotate(player.angle * Math.PI / 180);
+            const textWidth = ctx.measureText(player.username).width;
+            let nameX, nameY, heartsX, heartsY;
+            let transX = boardX + player.position.x;
+            let transY = boardY + player.position.y;
+            ctx.translate(transX, transY);
+            ctx.rotate(player.angle * Math.PI / 180);
 
-        if (player.color === 'blue') {
-            nameX = (player.height - textWidth) / 2 - player.height;
-            nameY = -2.5 * player.width;
-            heartsX = (player.height - (player.lives * 25)) / 2 - player.height;
-            heartsY = -2 * player.width;
-        } else if (player.color === 'red') {
-            nameX = (player.height - textWidth) / 2;
-            nameY = -3.5 * player.width;
-            heartsX = (player.height - (player.lives * 25)) / 2;
-            heartsY = -3 * player.width;
-        } else if (player.color === 'green') {
-            nameX = (player.width - textWidth) / 2;
-            nameY = -2.5 * player.height;
-            heartsX = (player.width - player.lives * 25) / 2;
-            heartsY = -2 * player.height;
-        } else if (player.color === 'yellow') {
-            nameX = (player.width - textWidth) / 2;
-            nameY = 4.5 * player.height;
-            heartsX = (player.width - player.lives * 25) / 2;
-            heartsY = 2 * player.height;
-        }
-        // Draw player name
-        ctx.fillText(player.username, nameX, nameY);
-        // Draw player lives as hearts
-        for (let i = 0; i < player.lives; i++) {
-            ctx.drawImage(heartImage, heartsX + i * 25, heartsY, 20, 20);
-        }
-        ctx.restore();
+            if (player.color === 'blue') {
+                nameX = (player.height - textWidth) / 2 - player.height;
+                nameY = -2.5 * player.width;
+                heartsX = (player.height - (player.lives * 25)) / 2 - player.height;
+                heartsY = -2 * player.width;
+            } else if (player.color === 'red') {
+                nameX = (player.height - textWidth) / 2;
+                nameY = -3.5 * player.width;
+                heartsX = (player.height - (player.lives * 25)) / 2;
+                heartsY = -3 * player.width;
+            } else if (player.color === 'green') {
+                nameX = (player.width - textWidth) / 2;
+                nameY = -2.5 * player.height;
+                heartsX = (player.width - player.lives * 25) / 2;
+                heartsY = -2 * player.height;
+            } else if (player.color === 'yellow') {
+                nameX = (player.width - textWidth) / 2;
+                nameY = 4.5 * player.height;
+                heartsX = (player.width - player.lives * 25) / 2;
+                heartsY = 2 * player.height;
+            }
+            // Draw player name
+            ctx.fillText(player.username, nameX, nameY);
+            // Draw player lives as hearts
+            for (let i = 0; i < player.lives; i++) {
+                ctx.drawImage(heartImage, heartsX + i * 25, heartsY, 20, 20);
+            }
+            ctx.restore();
+         }
     }
 }
 
@@ -107,6 +110,23 @@ function drawBall() {
     ctx.beginPath();
     ctx.arc(boardX + ball.x, boardY + ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
+}
+// Function to draw obstacles
+function drawObstacles() {
+    ctx.fillStyle = 'gray';
+    obstacles.forEach(obstacle => {
+        ctx.beginPath();
+        ctx.moveTo(boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.lineTo(boardX + obstacle.x + obstacle.width - obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.quadraticCurveTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y, boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.cornerRadius);
+        ctx.lineTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.height - obstacle.cornerRadius);
+        ctx.quadraticCurveTo(boardX + obstacle.x + obstacle.width, boardY + obstacle.y + obstacle.height, boardX + obstacle.x + obstacle.width - obstacle.cornerRadius, boardY + obstacle.y + obstacle.height);
+        ctx.lineTo(boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y + obstacle.height);
+        ctx.quadraticCurveTo(boardX + obstacle.x, boardY + obstacle.y + obstacle.height, boardX + obstacle.x, boardY + obstacle.y + obstacle.height - obstacle.cornerRadius);
+        ctx.lineTo(boardX + obstacle.x, boardY + obstacle.y + obstacle.cornerRadius);
+        ctx.quadraticCurveTo(boardX + obstacle.x, boardY + obstacle.y, boardX + obstacle.x + obstacle.cornerRadius, boardY + obstacle.y);
+        ctx.fill();
+    });
 }
 
 // Function to update player position
@@ -152,6 +172,7 @@ function gameLoop(timestamp) {
         drawBoard();
         drawPlayers();
         drawBall();
+        drawObstacles();
         if (accumulatedTime >= frameTime) {
             updatePlayerPosition(frameTime / 1000);
             accumulatedTime -= frameTime;
@@ -165,6 +186,10 @@ function startGame() {
     isGameRunning = true;
     gameLoop();
 }
+
+socket.on('obstaclesUpdated', (serverObstacles) => {
+    obstacles = serverObstacles;
+})
 
 // Listen for ball position updates
 socket.on('ballMoved', (serverBall) => {
@@ -202,11 +227,11 @@ socket.on('playerLostLife', (data) => {
 
 // Listen for game over
 socket.on('gameOver', (message) => {
-    alert(message);
     isGameRunning = false;
     players = [];
     lastTime = 0;
     accumulatedTime = 0;
     document.getElementById('mainCanvas').style.display = 'none';
-    document.getElementById('login').style.display = 'block';
+    document.getElementById('game').style.display = 'block';
+    document.getElementById('status').innerText = message;
 });
