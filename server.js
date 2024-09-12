@@ -112,21 +112,22 @@ function resetBall() {
 }
 
 function bounceWithMinValue() {
-    const minValue = 0.2;
+    const minValue = 0.1 + Math.random() * 0.2;
     const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
     let normDx = ball.dx / speed;
     let normDy = ball.dy / speed;
     log('Checking min bounce');
     if(Math.abs(normDx) > 1 - minValue) {
-        ball.dx = (normDx - Math.sign(normDx) * minValue) * speed;
+        ball.dx = Math.sign(normDx) * minValue
         log('Min bounce was applied to DX ' + ball.dx);
-        log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
     }
     if(Math.abs(normDy) > 1 - minValue) {
-        ball.dy = (normDy - Math.sign(normDy) * minValue) * speed;
+        ball.dy = Math.sign(normDy) * minValue
         log('Min bounce was applied to DY ' + ball.dy);
-        log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
     }
+    ball.dx = normDx * speed;
+    ball.dy = normDy * speed;
+    log('Min bounce was applied: speed ' + Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy));
 }
 
 function isBallCollidingWithObstacle(obstacle) {
@@ -157,25 +158,13 @@ function handleObstacleCollisions() {
             } else {
                 ball.dy *= -1;
             }
-            // Check if ball stuck inside the obstacle
-            if (ball.x + ball.radius > obstacle.x && ball.x - ball.radius < obstacle.x) {
-                ball.x = obstacle.x - ball.radius;
-            } else if (ball.x - ball.radius < obstacle.x + obstacle.width && ball.x + ball.radius > obstacle.x + obstacle.width) {
-                ball.x = obstacle.x + obstacle.width + ball.radius;
-            }
-
-            if (ball.y + ball.radius > obstacle.y && ball.y - ball.radius < obstacle.y) {
-                ball.y = obstacle.y - ball.radius;
-            } else if (ball.y - ball.radius < obstacle.y + obstacle.height && ball.y + ball.radius > obstacle.y + obstacle.height) {
-                ball.y = obstacle.y + obstacle.height + ball.radius;
-            }
             bounceWithMinValue();
         }
     });
 }
 
 function preventBallStuck() {
-    let margin = 5;
+    let margin = 3;
     if (ball.x > boardWidth) {
         ball.x = boardWidth - ball.radius - margin;
         log('Ball stuck at right edge');
@@ -211,20 +200,22 @@ function preventBallStuck() {
         }
     }
 
-    // for (let user of users) {
-    //     if (isBallCollidingWithPlayer(user)) {
-    //         if (ball.x < user.position.x) {
-    //             ball.x = user.position.x - ball.radius - margin;
-    //         } else if (ball.x > user.position.x) {
-    //             ball.x = user.position.x + ball.radius + margin;
-    //         }
-    //         if (ball.y < user.position.y) {
-    //             ball.y = user.position.y - ball.radius - margin;
-    //         } else if (ball.y > user.position.y) {
-    //             ball.y = user.position.y + ball.radius + margin;
-    //         }
-    //     }
-    // }
+    for (let user of users) {
+        if (isBallCollidingWithPlayer(user)) {
+            if(user.color === 'blue') {
+                ball.x = user.position.x + user.width + ball.radius + margin;
+            }
+            if (user.color === 'red') {
+                ball.x = user.position.x - user.width - ball.radius - margin;
+            }
+            if (user.color === 'green') {
+                ball.y = user.position.y + user.height + ball.radius + margin;
+            }
+            if (user.color === 'yellow') {
+                ball.y = user.position.y - user.height - ball.radius - margin;
+            }
+        }
+    }
 }
 
 function updateBallPosition() {
