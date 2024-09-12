@@ -178,27 +178,35 @@ function preventBallStuck() {
     let margin = 5;
     if (ball.x > boardWidth) {
         ball.x = boardWidth - ball.radius - margin;
+        log('Ball stuck at right edge');
     } else if (ball.x - ball.radius < 0) {
         ball.x = ball.radius + margin;
+        log('Ball stuck at left edge');
     }
 
-    if (ball.y + ball.radius > boardHeight) {
+    if (ball.y > boardHeight) {
         ball.y = boardHeight - ball.radius - margin;
-    } else if (ball.y < 0) {
+        log('Ball stuck at bottom edge');
+    } else if (ball.y - ball.radius < 0) {
         ball.y = ball.radius + margin;
+        log('Ball stuck at top edge');
     }
 
     for (let obstacle of obstacles) {
         if (isBallCollidingWithObstacle(obstacle)) {
             if (ball.x < obstacle.x) {
                 ball.x = obstacle.x - ball.radius - margin;
+                log('Ball stuck at left edge of obstacle');
             } else if (ball.x > obstacle.x + obstacle.width) {
                 ball.x = obstacle.x + obstacle.width + ball.radius + margin;
+                log('Ball stuck at right edge of obstacle');
             }
             if (ball.y < obstacle.y) {
                 ball.y = obstacle.y - ball.radius - margin;
+                log('Ball stuck at top edge of obstacle');
             } else if (ball.y > obstacle.y + obstacle.height) {
                 ball.y = obstacle.y + obstacle.height + ball.radius + margin;
+                log('Ball stuck at bottom edge of obstacle');
             }
         }
     }
