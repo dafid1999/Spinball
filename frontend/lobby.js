@@ -65,6 +65,15 @@ function updateOnlinePlayers(players) {
     });
 }
 
+socket.on('gameOver', function (message) {
+    updateReadyButton();
+});
+function updateReadyButton() {
+    const readyButton = document.getElementById('readyButton');
+    readyButton.disabled = false;
+}
+
+
 socket.on('playerStateChanged', function (players) {
     updateOnlinePlayers(players);
 });
