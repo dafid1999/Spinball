@@ -23,6 +23,10 @@ socket.on('lobbyFull', function (message) {
     document.getElementById('status').innerText = message;
 });
 
+socket.on('invalidUsername', function (message) {
+    document.getElementById('statusNick').innerText = message;
+});
+
 // Listen for player readiness
 socket.on('waiting', function (message) {
     document.getElementById('status').innerText = 'You are ready! ' + message;
@@ -49,6 +53,29 @@ socket.on('allPlayersReady', function (message) {
             document.getElementById('status').innerText = ``;
         }
     }, 1000);
+});
+
+function updateOnlinePlayers(players) {
+    const onlinePlayers = document.getElementById('playersOnline');
+    onlinePlayers.innerHTML = '';
+    players.forEach(player => {
+        const playerElement = document.createElement('div');
+        playerElement.innerText = `${player.username} - ${player.ready ? 'ready' : 'not ready'}`;
+        onlinePlayers.appendChild(playerElement);
+    });
+}
+
+socket.on('gameOver', function (message) {
+    updateReadyButton();
+});
+function updateReadyButton() {
+    const readyButton = document.getElementById('readyButton');
+    readyButton.disabled = false;
+}
+
+
+socket.on('playerStateChanged', function (players) {
+    updateOnlinePlayers(players);
 });
 
 socket.on('gameStarting', function (message) {

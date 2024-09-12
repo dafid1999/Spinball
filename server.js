@@ -314,6 +314,7 @@ function resetReadyStatus() {
 function checkGameOver(user) {
     io.sockets.emit('playerLostLife', { id: user.id, lives: user.lives });
     io.sockets.emit('currentPlayers', users);
+    
 
     if (user.lives <= 0) {
         user.ready = false;
@@ -324,8 +325,10 @@ function checkGameOver(user) {
             gameStarted = false;
             resetReadyStatus();
             io.sockets.emit('gameOver', 'Game over. The winner is ' + winner.username);
+            
         }
     }
+    io.sockets.emit('playerStateChanged', users);
 }
 
 function reorganizeUsers() {
@@ -342,6 +345,7 @@ function reorganizeUsers() {
         }
     });
     io.sockets.emit('currentPlayers', users);
+    io.sockets.emit('playerStateChanged', users);
 }
 
 io.on('connection', function (socket) {
@@ -354,7 +358,12 @@ io.on('connection', function (socket) {
     }
 
     socket.on('setUsername', function (data) {
-        if (users.find(user => user.username === data)) {
+        const username = data.trim();
+        if (username.length > 16) {
+            socket.emit('invalidUsername', 'Username is too long. Please choose a username with 16 characters or less.');
+        } else if (!/^[a-zA-Z0-9]+$/.test(username)) {
+            socket.emit('invalidUsername', 'Username can only contain letters and numbers.');
+        } else if (users.find(user => user.username === username)) {
             socket.emit('userExists', data + ' username is taken! Try another username.');
         } else {
             let width = playerSize[0].x;
@@ -386,6 +395,7 @@ io.on('connection', function (socket) {
 
             io.sockets.emit('currentPlayers', users);
             console.log(`${data} has joined`);
+            io.sockets.emit('playerStateChanged', users);
         }
     });
 
@@ -402,7 +412,7 @@ io.on('connection', function (socket) {
         user.ready = true;
         const readyUsersCount = users.filter(user => user.ready).length;
         log('users total: ' + users.length +' users ready: ' + readyUsersCount);
-
+        io.sockets.emit('playerStateChanged', users);
         if(!gameStarted) {
             if (readyUsersCount >= minPlayers) {
                 if (readyUsersCount === users.length) {
@@ -461,6 +471,7 @@ io.on('connection', function (socket) {
             console.log(`${users[index].username} has disconnected.`);
             users.splice(index, 1);
             reorganizeUsers();
+            io.sockets.emit('playerStateChanged', users);
         }
     });
 });
